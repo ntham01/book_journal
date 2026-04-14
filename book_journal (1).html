@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Book Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F4EF;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --border: rgba(0,0,0,0.09);
+    --border-med: rgba(0,0,0,0.15);
+    --text: #1A1814;
+    --text-2: #6B6760;
+    --text-3: #A8A5A0;
+    --accent: #2D5016;
+    --accent-light: #EAF0E3;
+    --accent-text: #2D5016;
+    --warn: #8B3A0F;
+    --warn-light: #FAF0EB;
+    --purple: #3D2B6B;
+    --purple-light: #EEEAF8;
+    --gold: #B8860B;
+    --gold-light: #FBF6E7;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-title span {
+    color: var(--accent);
+  }
+
+  .btn-add {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+    line-height: 1;
+    padding-bottom: 1px;
+  }
+  .btn-add:hover { background: #3a6b1e; transform: scale(1.07); }
+
+  /* ── Main content ── */
+  .content {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── Empty state ── */
+  .empty {
+    text-align: center;
+    padding: 6rem 2rem;
+  }
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+  .empty h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+  .empty p { font-size: 14px; color: var(--text-3); }
+
+  /* ── Book card ── */
+  .book-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .book-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.09); }
+
+  .book-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .book-header:hover { background: #FAFAF8; }
+
+  .book-spine {
+    width: 44px; height: 58px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .book-info { flex: 1; min-width: 0; }
+  .book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .book-author { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+
+  .book-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .progress-pill {
+    font-size: 12px;
+    color: var(--text-3);
+    background: var(--surface2);
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+  .progress-pill.done { background: var(--accent-light); color: var(--accent-text); border-color: rgba(45,80,22,0.2); }
+  .chev {
+    font-size: 11px;
+    color: var(--text-3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .chev.open { transform: rotate(180deg); }
+
+  /* ── Chapter list ── */
+  .ch-list {
+    border-top: 1px solid var(--border);
+  }
+  .ch-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 20px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .ch-row:last-child { border-bottom: none; }
+  .ch-row:hover { background: #FAFAF8; }
+  .ch-num {
+    font-size: 11px;
+    color: var(--text-3);
+    width: 22px;
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .ch-title { flex: 1; font-size: 13.5px; color: var(--text); }
+  .ch-badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  .ch-badge.noted { background: var(--accent-light); color: var(--accent-text); }
+  .ch-badge.empty { background: var(--surface2); color: var(--text-3); border: 1px solid var(--border); }
+
+  /* ── Modal overlay ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,18,15,0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 100;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+    border: 1px solid var(--border);
+  }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal-header {
+    padding: 24px 28px 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+  .modal-chapter-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .modal-book {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-top: 4px;
+  }
+
+  .modal-body { padding: 20px 28px; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-3);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    resize: vertical;
+    outline: none;
+    min-height: 130px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+  textarea::placeholder { color: var(--text-3); }
+
+  /* ── Key takeaways ── */
+  .kp-box {
+    background: var(--accent-light);
+    border: 1px solid rgba(45,80,22,0.15);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .kp-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--accent-text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .kp-label::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .kp-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .kp-row:last-child { margin-bottom: 0; }
+  .kp-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .kp-text { font-size: 13.5px; color: var(--text); line-height: 1.55; }
+
+  /* ── Loading state ── */
+  .loading-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border-med);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Modal footer ── */
+  .modal-footer {
+    padding: 16px 28px 24px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid var(--border-med);
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border-color: transparent;
+  }
+  .btn-primary:hover { background: #3a6b1e; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── Add book modal ── */
+  .search-input-wrap { position: relative; margin-bottom: 8px; }
+  .search-input {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-3); }
+
+  .hint-text {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 10px;
+    min-height: 18px;
+  }
+
+  .sugg-list {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .sugg-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .sugg-item:last-child { border-bottom: none; }
+  .sugg-item:hover { background: var(--surface2); }
+  .sugg-item.selected { background: var(--accent-light); }
+  .sugg-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .sugg-author { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+  .preview-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 4px;
+  }
+  .preview-book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .preview-book-meta { font-size: 12px; color: var(--text-2); margin-bottom: 10px; }
+  .preview-ch-list { max-height: 140px; overflow-y: auto; }
+  .preview-ch {
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+  .preview-ch:last-child { border-bottom: none; }
+  .preview-ch-n { color: var(--text-3); width: 20px; flex-shrink: 0; }
+
+  /* ── Audio recorder ── */
+  .audio-section {
+    margin-bottom: 14px;
+  }
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .btn-record {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 99px;
+    border: 1.5px solid var(--border-med);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-record:hover { background: var(--surface2); }
+  .btn-record.recording {
+    background: #FFF0F0;
+    border-color: #C0392B;
+    color: #C0392B;
+  }
+  .btn-record.recording:hover { background: #FFE5E5; }
+  .rec-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #C0392B;
+    flex-shrink: 0;
+    animation: recPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes recPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  .rec-timer {
+    font-size: 12px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+    min-width: 38px;
+  }
+  .rec-timer.active { color: #C0392B; font-weight: 500; }
+  .transcript-box {
+    background: #FFFBF5;
+    border: 1px dashed rgba(184,134,11,0.35);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-2);
+    min-height: 52px;
+    position: relative;
+  }
+  .transcript-box.live { border-style: solid; border-color: rgba(184,134,11,0.5); }
+  .transcript-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--gold);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .transcript-text { color: var(--text); }
+  .transcript-text.interim { color: var(--text-3); font-style: italic; }
+  .btn-use-transcript {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border-med);
+    background: var(--gold-light);
+    color: var(--gold);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: background 0.15s;
+    margin-top: 8px;
+  }
+  .btn-use-transcript:hover { background: #f5edcf; }
+  .no-speech-note {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* ── Color palette for book spines ── */
+  .spine-0 { background: #EAF0E3; color: #2D5016; }
+  .spine-1 { background: #EAF3FB; color: #1A4F7A; }
+  .spine-2 { background: #FBF3EA; color: #7A3A10; }
+  .spine-3 { background: #F3EAFB; color: #4A1A7A; }
+  .spine-4 { background: #FBFAEA; color: #5A5010; }
+  .spine-5 { background: #FBEAEC; color: #7A1A22; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">My <span>Book</span> Journal</div>
+  <button class="btn-add" id="addBtn" title="Add a book">+</button>
+</div>
+
+<div class="content">
+  <div id="bookList"></div>
+  <div class="empty" id="empty">
+    <div class="empty-icon">📚</div>
+    <h2>Your journal is empty</h2>
+    <p>Press + to add your first book</p>
+  </div>
+</div>
+
+<!-- Modal container -->
+<div id="modalContainer"></div>
+
+<script>
+const DB=[
+  {t:"Atomic Habits",a:"James Clear",y:2018,c:["The Surprising Power of Atomic Habits","How Your Habits Shape Your Identity","How to Build Better Habits in 4 Simple Steps","The Man Who Didn't Look Like a Cyclist","The Best Way to Start a New Habit","Motivation Is Overrated; Environment Often Matters More","The Secret to Self-Control","How to Make a Habit Irresistible","The Role of Family and Friends in Shaping Your Habits","How to Find and Fix the Causes of Your Bad Habits","Walk Slowly, but Never Backward","The Law of Least Effort","How to Stop Procrastinating Using the Two-Minute Rule","How to Make Good Habits Inevitable and Bad Habits Impossible","The Cardinal Rule of Behavior Change","How to Stick with Good Habits Every Day","How an Accountability Partner Can Change Everything","The Truth About Talent","The Goldilocks Rule","The Downside of Creating Good Habits","Conclusion: The Secret to Results That Last"]},
+  {t:"Sapiens: A Brief History of Humankind",a:"Yuval Noah Harari",y:2011,c:["An Animal of No Significance","The Tree of Knowledge","A Day in the Life of Adam and Eve","The Flood","History's Biggest Fraud","Building Pyramids","Memory Overload","There is No Justice in History","The Arrow of History","The Scent of Money","Imperial Visions","The Law of Religion","The Secret of Success","The Discovery of Ignorance","The Marriage of Science and Empire","The Capitalist Creed","The Wheels of Industry","A Permanent Revolution","And They Lived Happily Ever After","The End of Homo Sapiens"]},
+  {t:"The 7 Habits of Highly Effective People",a:"Stephen R. Covey",y:1989,c:["Inside-Out","The Seven Habits — An Overview","Be Proactive","Begin with the End in Mind","Put First Things First","Think Win/Win","Seek First to Understand, Then to Be Understood","Synergize","Sharpen the Saw","Inside-Out Again"]},
+  {t:"Thinking, Fast and Slow",a:"Daniel Kahneman",y:2011,c:["The Characters of the Story","Attention and Effort","The Lazy Controller","The Associative Machine","Cognitive Ease","Norms, Surprises, and Causes","A Machine for Jumping to Conclusions","How Judgments Happen","Answering an Easier Question","The Law of Small Numbers","Anchors","The Science of Availability","Availability, Emotion, and Risk","Tom W's Specialty","Linda: Less is More","Causes Trump Statistics","Regression to the Mean","Taming Intuitive Predictions","The Illusion of Understanding","The Illusion of Validity","Intuitions vs. Formulas","Expert Intuition: When Can We Trust It?","The Outside View","The Engine of Capitalism","Bernoulli's Errors","Prospect Theory","The Endowment Effect","Bad Events","The Fourfold Pattern","Rare Events","Risk Policies","Keeping Score","Reversals","Frames and Reality","Two Selves","Life as a Story","Experienced Well-Being","Thinking About Life"]},
+  {t:"The Power of Now",a:"Eckhart Tolle",y:1997,c:["You Are Not Your Mind","Consciousness: The Way Out of Pain","Moving Deeply into the Now","Mind Strategies for Avoiding the Now","The State of Presence","The Inner Body","Portals into the Unmanifested","Enlightened Relationships","Beyond Happiness and Unhappiness There Is Peace","The Meaning of Surrender"]},
+  {t:"Rich Dad Poor Dad",a:"Robert T. Kiyosaki",y:1997,c:["Rich Dad Poor Dad","The Rich Don't Work for Money","Why Teach Financial Literacy?","Mind Your Own Business","The History of Taxes and the Power of Corporations","The Rich Invent Money","Work to Learn — Don't Work for Money","Overcoming Obstacles","Getting Started","Still Want More? Here Are Some To Do's"]},
+  {t:"Man's Search for Meaning",a:"Viktor E. Frankl",y:1946,c:["Experiences in a Concentration Camp","Logotherapy in a Nutshell","The Case for a Tragic Optimism"]},
+  {t:"How to Win Friends and Influence People",a:"Dale Carnegie",y:1936,c:["If You Want to Gather Honey Don't Kick Over the Beehive","The Big Secret of Dealing with People","He Who Can Do This Has the Whole World with Him","Do This and You'll Be Welcome Anywhere","A Simple Way to Make a Good First Impression","If You Don't Do This, You Are Headed for Trouble","An Easy Way to Become a Good Conversationalist","How to Interest People","How to Make People Like You Instantly","You Can't Win an Argument","A Sure Way of Making Enemies and How to Avoid It","If You're Wrong, Admit It","A Drop of Honey","The Secret of Socrates","The Safety Valve in Handling Complaints","How to Get Cooperation","A Formula That Will Work Wonders for You","What Everybody Wants","An Appeal That Everybody Likes","The Movies Do It. TV Does It. Why Don't You Do It?","When Nothing Else Works, Try This"]},
+  {t:"The Lean Startup",a:"Eric Ries",y:2011,c:["Start","Define","Learn","Experiment","Leap","Test","Measure","Pivot (or Persevere)","Batch","Grow","Adapt","Innovate","Epilogue: Waste Not"]},
+  {t:"Deep Work",a:"Cal Newport",y:2016,c:["Deep Work Is Valuable","Deep Work Is Rare","Deep Work Is Meaningful","Work Deeply","Embrace Boredom","Quit Social Media","Drain the Shallows"]},
+  {t:"The Subtle Art of Not Giving a F*ck",a:"Mark Manson",y:2016,c:["Don't Try","Happiness Is a Problem","You Are Not Special","The Value of Suffering","You Are Always Choosing","You're Wrong About Everything","Failure Is the Way Forward","The Importance of Saying No","...And Then You Die"]},
+  {t:"Educated",a:"Tara Westover",y:2018,c:["Part One","Part Two","Part Three"]},
+  {t:"Becoming",a:"Michelle Obama",y:2018,c:["Becoming Me","Becoming Us","Becoming More"]},
+  {t:"The Great Gatsby",a:"F. Scott Fitzgerald",y:1925,c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9"]},
+  {t:"1984",a:"George Orwell",y:1949,c:["Part One","Part Two","Part Three","Appendix: The Principles of Newspeak"]},
+  {t:"To Kill a Mockingbird",a:"Harper Lee",y:1960,c:["Part One","Part Two"]},
+  {t:"The Alchemist",a:"Paulo Coelho",y:1988,c:["Prologue","Part One","Part Two"]},
+  {t:"Dune",a:"Frank Herbert",y:1965,c:["Book One: Dune","Book Two: Mua'Dib","Book Three: The Prophet","Appendices"]},
+  {t:"Meditations",a:"Marcus Aurelius",y:180,c:["Book I","Book II","Book III","Book IV","Book V","Book VI","Book VII","Book VIII","Book IX","Book X","Book XI","Book XII"]},
+  {t:"The 48 Laws of Power",a:"Robert Greene",y:1998,c:["Law 1: Never Outshine the Master","Law 2: Never Put Too Much Trust in Friends","Law 3: Conceal Your Intentions","Law 4: Always Say Less Than Necessary","Law 5: So Much Depends on Reputation","Law 6: Court Attention at All Costs","Law 7: Get Others to Do the Work for You","Law 8: Make Other People Come to You","Law 9: Win Through Your Actions, Never Through Argument","Law 10: Infection: Avoid the Unhappy and Unlucky","Law 11: Learn to Keep People Dependent on You","Law 12: Use Selective Honesty and Generosity","Law 13: Appeal to Self-Interest","Law 14: Pose as a Friend, Work as a Spy","Law 15: Crush Your Enemy Totally","Law 16: Use Absence to Increase Respect","Law 17: Keep Others in Suspended Terror","Law 18: Do Not Build Fortresses","Law 19: Know Who You're Dealing With","Law 20: Do Not Commit to Anyone","Law 21: Play a Sucker to Catch a Sucker","Law 22: Use the Surrender Tactic","Law 23: Concentrate Your Forces","Law 24: Play the Perfect Courtier","Law 25: Re-Create Yourself","Law 26: Keep Your Hands Clean","Law 27: Play on People's Need to Believe","Law 28: Enter Action with Boldness","Law 29: Plan All the Way to the End","Law 30: Make Your Accomplishments Seem Effortless","Law 31: Control the Options","Law 32: Play to People's Fantasies","Law 33: Discover Each Man's Thumbscrew","Law 34: Be Royal in Your Own Fashion","Law 35: Master the Art of Timing","Law 36: Disdain Things You Cannot Have","Law 37: Create Compelling Spectacles","Law 38: Think as You Like but Behave Like Others","Law 39: Stir Up Waters to Catch Fish","Law 40: Despise the Free Lunch","Law 41: Avoid Stepping into a Great Man's Shoes","Law 42: Strike the Shepherd","Law 43: Work on the Hearts and Minds of Others","Law 44: Disarm and Infuriate with the Mirror Effect","Law 45: Preach the Need for Change","Law 46: Never Appear Too Perfect","Law 47: Do Not Go Past the Mark You Aimed For","Law 48: Assume Formlessness"]},
+  {t:"Zero to One",a:"Peter Thiel",y:2014,c:["The Challenge of the Future","Party Like It's 1999","All Happy Companies Are Different","The Ideology of Competition","Last Mover Advantage","You Are Not a Lottery Ticket","Follow the Money","Secrets","Foundations","The Mechanics of Mafia","If You Build It, Will They Come?","Man and Machine","Seeing Green","The Founder's Paradox","Conclusion: Stagnation or Singularity?"]},
+  {t:"Outliers",a:"Malcolm Gladwell",y:2008,c:["The Roseto Mystery","The 10,000-Hour Rule","The Trouble with Geniuses, Part 1","The Trouble with Geniuses, Part 2","The Three Lessons of Joe Flom","Harlan, Kentucky","The Ethnic Theory of Plane Crashes","Rice Paddies and Math Tests","Marita's Bargain","A Jamaican Story"]},
+  {t:"Start with Why",a:"Simon Sinek",y:2009,c:["Assume You Know","Carrots and Sticks","The Golden Circle","This Is Not Opinion, This Is Biology","Clarity, Discipline and Consistency","The Emergence of Trust","How a Tipping Point Tips","Start with Why, but Know How","Know Why. Know How. Then What?","Communication Is Not About Speaking","When Why Goes Fuzzy","Split Happens","The Origins of a WHY","The New Competition"]},
+  {t:"Can't Hurt Me",a:"David Goggins",y:2018,c:["I Should Have Been a Statistic","Truth Hurts","The Impossible Task","Taking Souls","Armored Mind","It's Not About a Trophy","The Most Powerful Weapon","Talent Not Required","Uncommon Amongst Uncommon","The Cookie Jar","Wrapping Up"]},
+  {t:"The Body Keeps the Score",a:"Bessel van der Kolk",y:2014,c:["Lessons from Vietnam Veterans","Revolutions in Understanding Mind and Brain","Looking into the Brain","Running for Your Life","Body-Brain Connections","Losing Your Body, Losing Your Self","Getting on the Same Wavelength","Trapped in Relationships","What's Love Got to Do with It?","Developmental Trauma","Uncovering Secrets","The Unbearable Heaviness of Remembering","Healing from Trauma","Language: Miracle and Tyranny","Letting Go of the Past: EMDR","Learning to Inhabit Your Body: Yoga","Putting the Pieces Together","Filling in the Holes","Rewiring the Brain: Neurofeedback","Finding Your Voice","Epilogue"]},
+  {t:"Good to Great",a:"Jim Collins",y:2001,c:["Good Is the Enemy of Great","Level 5 Leadership","First Who... Then What","Confront the Brutal Facts","The Hedgehog Concept","A Culture of Discipline","Technology Accelerators","The Flywheel and the Doom Loop","From Good to Great to Built to Last"]},
+  {t:"Clean Code",a:"Robert C. Martin",y:2008,c:["Clean Code","Meaningful Names","Functions","Comments","Formatting","Objects and Data Structures","Error Handling","Boundaries","Unit Tests","Classes","Systems","Emergence","Concurrency","Successive Refinement","JUnit Internals","Refactoring SerialDate","Smells and Heuristics"]},
+  {t:"Designing Data-Intensive Applications",a:"Martin Kleppmann",y:2017,c:["Reliable, Scalable, and Maintainable Applications","Data Models and Query Languages","Storage and Retrieval","Encoding and Evolution","Replication","Partitioning","Transactions","The Trouble with Distributed Systems","Consistency and Consensus","Batch Processing","Stream Processing","The Future of Data Systems"]},
+  {t:"Harry Potter and the Philosopher's Stone",a:"J.K. Rowling",y:1997,c:["The Boy Who Lived","The Vanishing Glass","The Letters from No One","The Keeper of the Keys","Diagon Alley","The Journey from Platform Nine and Three-Quarters","The Sorting Hat","The Potions Master","The Midnight Duel","Halloween","Quidditch","The Mirror of Erised","Nicolas Flamel","Norbert the Norwegian Ridgeback","The Forbidden Forest","Through the Trapdoor","The Man with Two Faces"]},
+  {t:"The Hitchhiker's Guide to the Galaxy",a:"Douglas Adams",y:1979,c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18","Chapter 19","Chapter 20"]},
+  {t:"The Pragmatic Programmer",a:"David Thomas & Andrew Hunt",y:1999,c:["A Pragmatic Philosophy","A Pragmatic Approach","The Basic Tools","Pragmatic Paranoia","Bend or Break","Concurrency","While You Are Coding","Before the Project","Pragmatic Projects"]},
+];
+
+let books = [];
+try { const d = localStorage.getItem('bj_v4'); if (d) books = JSON.parse(d); } catch(e) {}
+function save() { try { localStorage.setItem('bj_v4', JSON.stringify(books)); } catch(e) {} }
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function render() {
+  const bl = document.getElementById('bookList');
+  const em = document.getElementById('empty');
+  em.style.display = books.length ? 'none' : 'block';
+  bl.innerHTML = '';
+  books.forEach((b, bi) => {
+    const si = bi % 6;
+    const done = b.chapters.filter(c => c.keypoints).length;
+    const allDone = done === b.chapters.length;
+    const el = document.createElement('div');
+    el.className = 'book-card';
+    el.innerHTML = `
+      <div class="book-header" onclick="toggleBook(${bi})">
+        <div class="book-spine spine-${si}">${b.title.slice(0,2).toUpperCase()}</div>
+        <div class="book-info">
+          <div class="book-title">${esc(b.title)}</div>
+          <div class="book-author">${esc(b.author)} &middot; ${b.year||''}</div>
+        </div>
+        <div class="book-progress">
+          <span class="progress-pill${allDone?' done':''}">${done}/${b.chapters.length} noted</span>
+          <span class="chev${b.open?' open':''}">&#9660;</span>
+        </div>
+      </div>
+      ${b.open ? `<div class="ch-list">${b.chapters.map((ch, ci) => `
+        <div class="ch-row" onclick="openNote(${bi},${ci})">
+          <span class="ch-num">${ci+1}</span>
+          <span class="ch-title">${esc(ch.title)}</span>
+          <span class="ch-badge ${ch.keypoints?'noted':'empty'}">${ch.keypoints?'Noted':'Add note'}</span>
+        </div>`).join('')}</div>` : ''}`;
+    bl.appendChild(el);
+  });
+}
+
+function toggleBook(bi) { books[bi].open = !books[bi].open; save(); render(); }
+
+// ── Add book modal ──
+document.getElementById('addBtn').onclick = () => {
+  showModal(`
+    <div class="modal-header">
+      <div class="modal-chapter-label">Library</div>
+      <div class="modal-title">Add a book</div>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Search by title or author</label>
+      <div class="search-input-wrap">
+        <input class="search-input" id="searchIn" placeholder="e.g. Atomic Habits, Marcus Aurelius..." autocomplete="off" oninput="onSearch()" />
+      </div>
+      <div class="hint-text" id="hint">Start typing to search</div>
+      <div id="suggBox"></div>
+      <div id="previewBox"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="addOk" onclick="doAdd()" disabled>Add book</button>
+    </div>
+  `);
+  setTimeout(() => document.getElementById('searchIn').focus(), 60);
+};
+
+let _sel = null;
+window._results = [];
+
+function onSearch() {
+  const q = document.getElementById('searchIn').value.trim();
+  _sel = null;
+  document.getElementById('addOk').disabled = true;
+  document.getElementById('previewBox').innerHTML = '';
+  const hint = document.getElementById('hint');
+  const suggBox = document.getElementById('suggBox');
+  if (!q || q.length < 2) { hint.textContent = 'Start typing to search'; suggBox.innerHTML = ''; return; }
+  const ql = q.toLowerCase();
+  const results = DB.filter(b => b.t.toLowerCase().includes(ql) || b.a.toLowerCase().includes(ql)).slice(0, 5);
+  window._results = results;
+  if (!results.length) { hint.textContent = 'No matches found'; suggBox.innerHTML = ''; return; }
+  hint.textContent = `${results.length} result${results.length > 1 ? 's' : ''}`;
+  suggBox.innerHTML = `<div class="sugg-list">${results.map((b,i) => `
+    <div class="sugg-item" id="si${i}" onclick="selectBook(${i})">
+      <div class="sugg-title">${esc(b.t)}</div>
+      <div class="sugg-author">${esc(b.a)} &middot; ${b.y}</div>
+    </div>`).join('')}</div>`;
+}
+
+function selectBook(i) {
+  _sel = window._results[i];
+  document.querySelectorAll('.sugg-item').forEach(el => el.classList.remove('selected'));
+  const si = document.getElementById('si'+i);
+  if (si) si.classList.add('selected');
+  document.getElementById('hint').textContent = `${_sel.c.length} chapters`;
+  document.getElementById('previewBox').innerHTML = `
+    <div class="preview-box">
+      <div class="preview-book-title">${esc(_sel.t)}</div>
+      <div class="preview-book-meta">${esc(_sel.a)} &middot; ${_sel.y} &middot; ${_sel.c.length} chapters</div>
+      <div class="preview-ch-list">${_sel.c.map((c,i) => `
+        <div class="preview-ch"><span class="preview-ch-n">${i+1}</span><span>${esc(c)}</span></div>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('addOk').disabled = false;
+}
+
+function doAdd() {
+  if (!_sel) return;
+  books.push({ title: _sel.t, author: _sel.a, year: _sel.y, chapters: _sel.c.map(t => ({ title: t, keypoints: null, notes: '' })), open: true });
+  save(); render(); closeModal();
+}
+
+// ── Note / chapter modal ──
+function openNote(bi, ci) {
+  const b = books[bi], ch = b.chapters[ci];
+  showModal(`
+    <div class="modal-header">
+      <div class="modal-chapter-label">Chapter ${ci+1} &middot; ${esc(b.title)}</div>
+      <div class="modal-title">${esc(ch.title)}</div>
+    </div>
+    <div class="modal-body">
+      <div class="audio-section">
+        <label class="field-label">Record your thoughts</label>
+        <div class="audio-controls">
+          <button class="btn-record" id="recBtn" onclick="toggleRecording()">
+            <span style="font-size:15px">&#127897;</span> Record
+          </button>
+          <span class="rec-timer" id="recTimer">0:00</span>
+        </div>
+        <div id="transcriptArea"></div>
+      </div>
+      <label class="field-label">Your summary &amp; thoughts</label>
+      <textarea id="noteTa" placeholder="What happened in this chapter? What surprised you? What do you want to remember... (or record above to auto-fill)">${esc(ch.notes||'')}</textarea>
+      <div id="kpArea">${ch.keypoints ? kpHTML(ch.keypoints) : ''}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="saveClose(${bi},${ci})">Save &amp; close</button>
+      <button class="btn btn-primary" id="sumBtn" onclick="doSummarize(${bi},${ci})">Summarize with Claude</button>
+    </div>
+  `);
+  initRecorder();
+}
+
+function kpHTML(kps) {
+  return `<div class="kp-box">
+    <div class="kp-label">3 key takeaways</div>
+    ${kps.map((k,i) => `<div class="kp-row"><div class="kp-num">${i+1}</div><div class="kp-text">${esc(k)}</div></div>`).join('')}
+  </div>`;
+}
+
+async function doSummarize(bi, ci) {
+  const notes = document.getElementById('noteTa')?.value?.trim();
+  if (!notes) { alert('Write your summary first, then hit Summarize.'); return; }
+  books[bi].chapters[ci].notes = notes; save();
+  const kpArea = document.getElementById('kpArea');
+  kpArea.innerHTML = `<div class="loading-box"><div class="spinner"></div>Summarizing with Claude...</div>`;
+  const btn = document.getElementById('sumBtn'); if (btn) btn.disabled = true;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 500,
+        messages: [{ role: "user", content: `From this book chapter summary, extract exactly 3 key takeaways. Return ONLY a JSON array of 3 strings. No markdown, no preamble.\n\n${notes}` }]
+      })
+    });
+    const data = await res.json();
+    const txt = data.content.filter(x => x.type === 'text').map(x => x.text).join('');
+    const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    books[bi].chapters[ci].keypoints = arr; save(); render();
+    kpArea.innerHTML = kpHTML(arr);
+    if (btn) btn.remove();
+  } catch(e) {
+    kpArea.innerHTML = `<div class="loading-box" style="color:#8B3A0F;">Could not summarize — please try again.</div>`;
+    if (btn) btn.disabled = false;
+  }
+}
+
+function saveClose(bi, ci) {
+  const ta = document.getElementById('noteTa');
+  if (ta) books[bi].chapters[ci].notes = ta.value;
+  save(); render(); closeModal();
+}
+
+// ── Audio recorder ──
+let _recState = { isRecording: false, recognition: null, timerInterval: null, seconds: 0, finalText: '', interimText: '' };
+
+function initRecorder() {
+  _recState = { isRecording: false, recognition: null, timerInterval: null, seconds: 0, finalText: '', interimText: '' };
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    const area = document.getElementById('transcriptArea');
+    if (area) area.innerHTML = `<p class="no-speech-note">&#9888; Your browser doesn't support speech recognition. Try Chrome or Edge for auto-transcription.</p>`;
+  }
+}
+
+function toggleRecording() {
+  if (_recState.isRecording) stopRecording(); else startRecording();
+}
+
+function startRecording() {
+  const btn = document.getElementById('recBtn');
+  const timerEl = document.getElementById('recTimer');
+  const area = document.getElementById('transcriptArea');
+  if (!btn || !timerEl || !area) return;
+
+  _recState.isRecording = true;
+  _recState.seconds = 0;
+  _recState.finalText = '';
+  _recState.interimText = '';
+
+  btn.className = 'btn-record recording';
+  btn.innerHTML = '<span class="rec-dot"></span> Stop';
+  timerEl.className = 'rec-timer active';
+
+  area.innerHTML = `
+    <div class="transcript-box live" id="transcriptBox">
+      <div class="transcript-label">&#127897; Live transcript</div>
+      <div id="transcriptText" class="transcript-text">Listening...</div>
+    </div>`;
+
+  // Timer
+  _recState.timerInterval = setInterval(() => {
+    _recState.seconds++;
+    const m = Math.floor(_recState.seconds / 60);
+    const s = String(_recState.seconds % 60).padStart(2, '0');
+    if (timerEl) timerEl.textContent = `${m}:${s}`;
+  }, 1000);
+
+  // Speech recognition
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRec) {
+    const rec = new SpeechRec();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
+    _recState.recognition = rec;
+
+    rec.onresult = (e) => {
+      let interim = '';
+      let final = _recState.finalText;
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) { final += (final ? ' ' : '') + t.trim(); }
+        else { interim += t; }
+      }
+      _recState.finalText = final;
+      _recState.interimText = interim;
+      const el = document.getElementById('transcriptText');
+      if (el) {
+        el.innerHTML = (final ? `<span class="transcript-text">${esc(final)}</span>` : '') +
+                       (interim ? `<span class="transcript-text interim"> ${esc(interim)}</span>` : '') ||
+                       'Listening...';
+      }
+    };
+    rec.onerror = (e) => {
+      const el = document.getElementById('transcriptText');
+      if (el && e.error !== 'aborted') el.innerHTML = `<span style="color:var(--warn)">Mic error: ${e.error}</span>`;
+    };
+    rec.start();
+  } else {
+    // No speech API — just show timer, no transcript
+    const el = document.getElementById('transcriptText');
+    if (el) el.textContent = 'Recording... (transcription not available in this browser)';
+  }
+}
+
+function stopRecording() {
+  _recState.isRecording = false;
+  clearInterval(_recState.timerInterval);
+  if (_recState.recognition) { try { _recState.recognition.stop(); } catch(e) {} _recState.recognition = null; }
+
+  const btn = document.getElementById('recBtn');
+  const timerEl = document.getElementById('recTimer');
+  if (btn) { btn.className = 'btn-record'; btn.innerHTML = '<span style="font-size:15px">&#127897;</span> Record again'; }
+  if (timerEl) timerEl.className = 'rec-timer';
+
+  const transcript = _recState.finalText.trim();
+  const area = document.getElementById('transcriptArea');
+  if (area) {
+    if (transcript) {
+      area.innerHTML = `
+        <div class="transcript-box" id="transcriptBox">
+          <div class="transcript-label">&#10003; Transcript</div>
+          <div class="transcript-text">${esc(transcript)}</div>
+        </div>
+        <button class="btn-use-transcript" onclick="useTranscript()">&#8595; Use as notes</button>`;
+    } else {
+      area.innerHTML = `<p class="no-speech-note">No transcript captured. You can type your notes below.</p>`;
+    }
+  }
+}
+
+function useTranscript() {
+  const ta = document.getElementById('noteTa');
+  if (!ta || !_recState.finalText) return;
+  const existing = ta.value.trim();
+  ta.value = existing ? existing + '\n\n' + _recState.finalText.trim() : _recState.finalText.trim();
+  ta.focus();
+  // scroll textarea into view
+  ta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Modal helpers ──
+function showModal(html) {
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">${html}</div>
+    </div>`;
+}
+function closeModal() {
+  if (_recState && _recState.isRecording) stopRecording();
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+render();
+</script>
+</body>
+</html>
