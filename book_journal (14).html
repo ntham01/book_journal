@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F4EF;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --border: rgba(0,0,0,0.09);
+    --border-med: rgba(0,0,0,0.15);
+    --text: #1A1814;
+    --text-2: #6B6760;
+    --text-3: #A8A5A0;
+    --accent: #2D5016;
+    --accent-light: #EAF0E3;
+    --accent-text: #2D5016;
+    --warn: #8B3A0F;
+    --warn-light: #FAF0EB;
+    --purple: #3D2B6B;
+    --purple-light: #EEEAF8;
+    --gold: #B8860B;
+    --gold-light: #FBF6E7;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  body.dark {
+    --bg: #1C1520;
+    --surface: #251A29;
+    --surface2: #2E2135;
+    --border: rgba(255,255,255,0.07);
+    --border-med: rgba(255,255,255,0.13);
+    --text: #F0EAF5;
+    --text-2: #B09ABF;
+    --text-3: #7A6485;
+    --accent: #69385C;
+    --accent-light: #2E1A28;
+    --accent-text: #C98AB8;
+    --warn: #C0613A;
+    --warn-light: #2A1810;
+    --gold: #C9980D;
+    --gold-light: #2A2210;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.25);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.35);
+  }
+
+  /* Theme toggle button */
+  .btn-theme {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border-med);
+    background: var(--surface2);
+    color: var(--text-2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-theme:hover { background: var(--border-med); transform: scale(1.08); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+    overflow-y: scroll;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+
+  /* Invisible spacer ensures page always overflows so scrollbar track stays visible */
+  .scroll-anchor {
+    height: 120px;
+    pointer-events: none;
+  }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .topbar-title span { color: var(--accent); font-weight: 700; letter-spacing: 0.4px; }
+  body.dark .topbar-title span { color: #FFFFFF; }
+
+  .topbar-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-3);
+    letter-spacing: 0.2px;
+    margin-top: 1px;
+  }
+
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.3px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .btn-add {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+    line-height: 1;
+    padding-bottom: 1px;
+  }
+  .btn-add:hover { background: #3a6b1e; transform: scale(1.07); }
+
+  .content {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 6rem 2rem;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 1rem; opacity: 0.4; }
+  .empty h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+  .empty p { font-size: 14px; color: var(--text-3); }
+
+  .book-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .book-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.09); }
+
+  .book-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .book-header:hover { background: var(--surface2); }
+
+  .book-spine {
+    width: 44px; height: 58px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+    overflow: hidden;
+  }
+  .book-spine img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .book-info { flex: 1; min-width: 0; }
+  .book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .book-author { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+
+  .book-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .btn-remove-book {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--border-med);
+    background: var(--surface2);
+    color: var(--text-3);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1;
+    padding: 0;
+  }
+  .btn-remove-book:hover { background: var(--warn-light); color: var(--warn); border-color: rgba(139,58,15,0.3); }
+
+  .progress-pill {
+    font-size: 12px;
+    color: var(--text-3);
+    background: var(--surface2);
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+  .progress-pill.done { background: var(--accent-light); color: var(--accent-text); border-color: rgba(45,80,22,0.2); }
+  .chev {
+    font-size: 11px;
+    color: var(--text-3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .chev.open { transform: rotate(180deg); }
+
+  .ch-list {
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .ch-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 20px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .ch-row:last-child { border-bottom: none; }
+  .ch-row:hover { background: var(--surface2); }
+  .ch-num {
+    font-size: 11px;
+    color: var(--text-3);
+    width: 22px;
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .ch-title { flex: 1; font-size: 13.5px; color: var(--text); }
+  .ch-badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  .ch-badge.noted { background: var(--accent-light); color: var(--accent-text); }
+  .ch-badge.audio-noted { background: #1A1814; color: #ffffff; border: none; }
+  .ch-badge.empty { background: var(--surface2); color: var(--text-3); border: 1px solid var(--border); }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,18,15,0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 100;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+    border: 1px solid var(--border);
+  }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal-header {
+    padding: 24px 28px 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+  .modal-chapter-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .modal-book { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+
+  .modal-body { padding: 20px 28px; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-3);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    resize: vertical;
+    outline: none;
+    min-height: 130px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  textarea:focus { border-color: var(--accent); background: #fff; }
+  textarea::placeholder { color: var(--text-3); }
+
+  .kp-box {
+    background: var(--accent-light);
+    border: 1px solid rgba(45,80,22,0.15);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .kp-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--accent-text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .kp-label::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .kp-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .kp-row:last-child { margin-bottom: 0; }
+  .kp-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .kp-text { font-size: 13.5px; color: var(--text); line-height: 1.55; }
+
+  .loading-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border-med);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .modal-footer {
+    padding: 16px 28px 24px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid var(--border-med);
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border-color: transparent;
+  }
+  .btn-primary:hover { background: #3a6b1e; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── Add book modal ── */
+  .mode-tabs {
+    display: flex;
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: var(--surface2);
+    color: var(--text-2);
+    transition: background 0.15s, color 0.15s;
+    text-align: center;
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: white;
+  }
+  .mode-tab:first-child { border-right: 1px solid var(--border-med); }
+
+  .search-input-wrap { position: relative; margin-bottom: 8px; }
+  .search-input {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-3); }
+
+  .hint-text {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 10px;
+    min-height: 18px;
+  }
+
+  .sugg-list {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .sugg-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sugg-item:last-child { border-bottom: none; }
+  .sugg-item:hover { background: var(--surface2); }
+  .sugg-item.selected { background: var(--accent-light); }
+  .sugg-thumb {
+    width: 32px; height: 44px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: var(--text-3);
+  }
+  .sugg-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .sugg-info { flex: 1; min-width: 0; }
+  .sugg-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .sugg-meta { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  .sugg-genre {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: var(--surface2);
+    color: var(--text-3);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .preview-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 4px;
+  }
+  .preview-book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .preview-book-meta { font-size: 12px; color: var(--text-2); margin-bottom: 10px; }
+  .preview-ch-list { max-height: 140px; overflow-y: auto; }
+  .preview-ch {
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+  .preview-ch:last-child { border-bottom: none; }
+  .preview-ch-n { color: var(--text-3); width: 20px; flex-shrink: 0; }
+
+  /* ── Manual entry ── */
+  .manual-field {
+    margin-bottom: 14px;
+  }
+  .manual-input {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .manual-input:focus { border-color: var(--accent); }
+  .manual-input::placeholder { color: var(--text-3); }
+  .chapters-input-area {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.7;
+  }
+  .chapters-input-area:focus { border-color: var(--accent); }
+  .chapters-input-area::placeholder { color: var(--text-3); }
+  .manual-hint {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 5px;
+  }
+  .img-preview-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .img-preview {
+    width: 40px; height: 54px;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    display: none;
+  }
+  .img-preview.shown { display: block; }
+
+  /* ── Audio recorder ── */
+  .audio-section { margin-bottom: 14px; }
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .btn-record {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 99px;
+    border: 1.5px solid var(--border-med);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-record:hover { background: var(--surface2); }
+  .btn-record.recording {
+    background: #FFF0F0;
+    border-color: #C0392B;
+    color: #C0392B;
+  }
+  .btn-record.recording:hover { background: #FFE5E5; }
+  .rec-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #C0392B;
+    flex-shrink: 0;
+    animation: recPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes recPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  .rec-timer {
+    font-size: 12px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+    min-width: 38px;
+  }
+  .rec-timer.active { color: #C0392B; font-weight: 500; }
+  .transcript-box {
+    background: var(--gold-light);
+    border: 1px dashed rgba(184,134,11,0.35);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-2);
+    min-height: 52px;
+    position: relative;
+  }
+  .transcript-box.live { border-style: solid; border-color: rgba(184,134,11,0.5); }
+  .transcript-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--gold);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .transcript-text { color: var(--text); }
+  .transcript-text.interim { color: var(--text-3); font-style: italic; }
+  .btn-use-transcript {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border-med);
+    background: var(--gold-light);
+    color: var(--gold);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: background 0.15s;
+    margin-top: 8px;
+  }
+  .btn-use-transcript:hover { background: #f5edcf; }
+  .no-speech-note { font-size: 12px; color: var(--text-3); margin-top: 6px; font-style: italic; }
+  .saved-audio-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .btn-delete-audio {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid rgba(139,58,15,0.3);
+    background: var(--warn-light);
+    color: var(--warn);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .btn-delete-audio:hover { background: #f5e0d4; }
+
+  .spine-0 { background: #EAF0E3; color: #2D5016; }
+  .spine-1 { background: #EAF3FB; color: #1A4F7A; }
+  .spine-2 { background: #FBF3EA; color: #7A3A10; }
+  .spine-3 { background: #F3EAFB; color: #4A1A7A; }
+  .spine-4 { background: #FBFAEA; color: #5A5010; }
+  .spine-5 { background: #FBEAEC; color: #7A1A22; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <span>Scriba</span>
+    <div class="topbar-subtitle">Created by Nathaniel Tham</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="btn-theme" id="themeBtn" title="Toggle dark mode" onclick="toggleTheme()">
+      <!-- moon icon (light mode) -->
+      <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <!-- sun icon (dark mode) -->
+      <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <button class="btn-add" id="addBtn" title="Add a book">+</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="bookList"></div>
+  <div class="empty" id="empty">
+    <div class="empty-icon">📚</div>
+    <h2>Your journal is empty</h2>
+    <p>Press + to add your first book</p>
+  </div>
+  <div class="scroll-anchor"></div>
+</div>
+
+<div id="modalContainer"></div>
+
+<script>
+let books = [];
+try { const d = localStorage.getItem('bj_v5'); if (d) books = JSON.parse(d); } catch(e) {}
+function save() { try { localStorage.setItem('bj_v5', JSON.stringify(books)); } catch(e) {} }
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── 300 Book Database ──
+// Categories: film, screenwriting, self-help, memoir, fiction-classics, business, philosophy
+const BOOK_DB = [
+  // ── SCREENWRITING ──
+  { t:"Save the Cat!", a:"Blake Snyder", y:2005, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9781932907001-M.jpg", c:["The Last Book on Screenwriting You'll Ever Need","A Screenwriter's Job","The Logline: What Is It? Why Do I Need One?","Give Me the Same Thing... Only Different!","It's About a Guy Who...","Let's Beat It Out!","The Board","The Set-Up","Fun and Games","The Dark Night of the Soul","Finale","What's Wrong With This Picture?","Genre and the 10 Types of Movies","Creating the Perfect Screenplay","The Blake Snyder Beat Sheet"] },
+  { t:"Story", a:"Robert McKee", y:1997, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780060391683-M.jpg", c:["The Story Problem","The Structure Spectrum","Structure and Setting","Structure and Genre","Structure and Character","Structure and Meaning","The Inciting Incident","Act Design","Scene Design","Scene Analysis","Dialogue","The Text","The Writer at Work","The Principle of Antagonism","The Substance of Story"] },
+  { t:"The Anatomy of Story", a:"John Truby", y:2007, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780865479517-M.jpg", c:["The Foundations of Storytelling","Premise","Seven Key Story Steps","Character","Moral Argument","Plot","Arena","Symbol System","Dialogue","Scene Construction and Symphonic Dialogue","Scene Weave","Story Space","Endings","The Story as a Whole","Advanced Story Techniques"] },
+  { t:"Screenplay: The Foundations of Screenwriting", a:"Syd Field", y:1979, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780385339032-M.jpg", c:["What Is a Screenplay?","The Paradigm","The Setup","The Confrontation","The Resolution","Character","Dramatic Structure","The First Ten Pages","Plot Points","The Midpoint","Subtext","Dialogue","Visual Storytelling","The Rewrite","Starting from Scratch"] },
+  { t:"Writing the Character-Centered Screenplay", a:"Andrew Horton", y:1994, genre:"Screenwriting", img:"", c:["Introduction to Character","The Inner Life","Backstory","Character Arc","Dialogue and Voice","Character in Action","Relationships","Antagonists","Comic Characters","The Ensemble","Character and Genre","Writing Exercise: The Character Study","Revision","Pitching Your Character","The Final Draft"] },
+  { t:"The Screenwriter's Bible", a:"David Trottier", y:1994, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9781879505087-M.jpg", c:["Format Essentials","Scene Headings","Action Lines","Dialogue","Transitions","Title Pages","Revisions","The Three-Act Structure","Character Development","Theme and Premise","The Scene","Subtext","The Spec Script","Pitching and Selling","Career Strategies"] },
+  { t:"Making a Good Script Great", a:"Linda Seger", y:1987, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780935701203-M.jpg", c:["What Makes a Good Script?","Creating the Three-Act Structure","Scene Building","Creating Dimensional Characters","Making It Happen: Action and Motivation","Probing the Problem","Working with Theme","Rewriting Dialogue","Making it Visual","Subplots","The Rewriting Process","Do You Need a Script Consultant?","Developing Your Script","The Business Side","The Final Rewrite"] },
+  { t:"Writing Drama", a:"Yves Lavandier", y:2005, genre:"Screenwriting", img:"", c:["Dramatic Action","Conflict and Crisis","The Protagonist","Dramatic Information","Temporal Construction","Causality","Character","Three-Act Structure","The Setup","Development","Climax and Resolution","Scene Writing","Dialogue","Comedy","The Rewrite Process"] },
+  { t:"Alternative Scriptwriting", a:"Ken Dancyger & Jeff Rush", y:1991, genre:"Screenwriting", img:"", c:["Beyond Aristotle","The Ironic Script","The Experimental Script","Melodrama Revisited","Mixing Genres","Voice and Tone","Character Reconsidered","Plot Alternatives","Subverting Expectations","Documentary Approaches","Adaptation","Collaboration","The Nonlinear Script","Writing for the Market","Your Unique Voice"] },
+  { t:"The TV Showrunner's Roadmap", a:"Neil Landau", y:2014, genre:"Screenwriting", img:"", c:["What Is a Showrunner?","Creating Your World","The Series Bible","Pilots","Breaking Story in the Writers' Room","Staffing Your Room","Managing Up and Down","Production Realities","Post-Production","Network and Studio Relationships","Branding Your Show","The Digital Landscape","International Markets","Protecting Your Vision","Legacy and Next Steps"] },
+  { t:"Adventures in the Screen Trade", a:"William Goldman", y:1983, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780446391177-M.jpg", c:["Nobody Knows Anything","The Star System","Butch Cassidy and the Sundance Kid","The Writing Process","The Magic of the Movies","Working in Hollywood","The Producer","The Director","Actors and Actresses","The Screenplay Format","Adapting Novels","Rewrites and Polish","All the President's Men","The Princess Bride","Marathon Man"] },
+  { t:"Which Lie Did I Tell?", a:"William Goldman", y:2000, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780375703249-M.jpg", c:["The Screwtape Letters","The Ghost and the Darkness","Absolute Power","Kiss the Girls","Maverick","The Chamber","A Bridge Too Far","Magic","Chaplin","The Big Picture","Misery: The Sequel","The Princess Bride: Revisited","Craft and Commerce","Advice to Young Writers","Nobody Still Knows Anything"] },
+  { t:"Writing the TV Drama Series", a:"Pamela Douglas", y:2005, genre:"Screenwriting", img:"", c:["Drama Then and Now","How to Build a Series","The Writers' Room","Breaking an Episode","Writing the Pilot","Character Arcs","World-Building","Dialogue and Voice","Subplots","Directing the Writer","Staffing Season","Streaming vs. Network","Diversity in the Room","Your Career Path","The Business of Television"] },
+
+  // ── FILM / CINEMA ──
+  { t:"Easy Riders, Raging Bulls", a:"Peter Biskind", y:1998, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9780684857084-M.jpg", c:["The Wild Bunch","BBS: The Mavericks","Five Easy Pieces","The Last Picture Show","Mean Streets","Chinatown","Nashville","Taxi Driver","Star Wars vs New Hollywood","The Godfather","Apocalypse Now","Heaven's Gate","The End of an Era","Legacy","What Remains"] },
+  { t:"Pictures at a Revolution", a:"Mark Harris", y:2008, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9781594201523-M.jpg", c:["1967","Bonnie and Clyde","The Graduate","In the Heat of the Night","Guess Who's Coming to Dinner","Doctor Dolittle","Five Films and the Changing of America","The New Sensibility","The Academy Decides","The Night of the Oscars","Aftermath","Legacy","The End of the Old Hollywood","The New Faces","Revolution in Retrospect"] },
+  { t:"On Directing Film", a:"David Mamet", y:1991, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9780140127225-M.jpg", c:["Storytelling","Where Do You Put the Camera?","Subtext","The Tasks of the Director","Pig — The Movie","The Perfect Shot","Character","Genre","The Film School","Counter-Programming","The Question of Talent","The Audience's Job","On Acting","On Editing","Final Thoughts"] },
+  { t:"In the Blink of an Eye", a:"Walter Murch", y:1995, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9781879505629-M.jpg", c:["Emotion, Story, Rhythm","The Rule of Six","Continuous and Discontinuous Worlds","The Blink","Digital Editing","What to Cut?","The Moment of Transition","Three Axes of Film","Transformation","Editing and Dreaming","Sound Design","The Invisible Cut","Codas and Sequiturs","Postproduction as Thought","The Future of Film"] },
+  { t:"Hitchcock/Truffaut", a:"François Truffaut", y:1967, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9780671604295-M.jpg", c:["The Early British Films","The American Period Begins","Shadow of a Doubt","Rope","Strangers on a Train","Rear Window","The Wrong Man","Vertigo","North by Northwest","Psycho","The Birds","Marnie","Torn Curtain","Topaz","Lessons from Hitchcock"] },
+  { t:"Film Art: An Introduction", a:"David Bordwell & Kristin Thompson", y:1979, genre:"Film", img:"", c:["Film as Art","The Formal System of Film","Narrative as a Formal System","Film Style","Cinematography","Mise-en-Scène","Editing","Sound","Documentary","Experimental Film","Types of Movies","Film Criticism","Film History Overview","Analyzing a Film","Writing About Film"] },
+  { t:"The Conversations: Walter Murch and the Art of Editing Film", a:"Michael Ondaatje", y:2002, genre:"Film", img:"", c:["Meeting Walter Murch","The Godfather","The Conversation","Apocalypse Now","Learning to Edit","The Anatomy of Sound","Digital Revolution","Touch of Evil","The English Patient","Cold Mountain","The Art of Cutting","Memory and Film","Collaboration","Time in Cinema","The Future"] },
+  { t:"Down and Dirty Pictures", a:"Peter Biskind", y:2004, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9780684862576-M.jpg", c:["Sundance","Harvey Weinstein","Sex, Lies, and Videotape","Pulp Fiction","The Miramax Machine","Quentin Tarantino","Kevin Smith","Clerks","The Blair Witch Project","Good Will Hunting","Shakespeare in Love","The Sundance Institute","Park City","The Oscar Wars","The End of Indie"] },
+  { t:"Which Way Hollywood?", a:"F.X. Feeney", y:2009, genre:"Film", img:"", c:["Classical Hollywood","The Studio System","The Director's Revolution","The Seventies Renaissance","Blockbuster Era","Cable and VHS","Indie Cinema","Digital Filmmaking","Global Cinema","Animation Transformed","Documentary Renaissance","Horror and Genre","The Franchise Age","Streaming","The Future of Movies"] },
+  { t:"The Film Experience", a:"Timothy Corrigan & Patricia White", y:2004, genre:"Film", img:"", c:["Engaging the Image","Film Form","Mise-en-Scène","Cinematography","Editing","Film Sound","Narrative","Documentary","Experimental Film","Film Histories","Critical Frameworks","Psychoanalysis and Film","Genre","Spectatorship","World Cinemas"] },
+  { t:"Spike Lee: That's My Story and I'm Sticking to It", a:"Kaleem Aftab", y:2005, genre:"Film", img:"", c:["Brooklyn","School Daze","She's Gotta Have It","Do the Right Thing","Mo' Better Blues","Jungle Fever","Malcolm X","Crooklyn","Clockers","He Got Game","25th Hour","Inside Man","Oldboy","Chi-Raq","BlacKkKlansman"] },
+  { t:"American Cinema/American Culture", a:"John Belton", y:1994, genre:"Film", img:"", c:["The Classical Hollywood Style","The Studio System","Stars","Genre","The Western","The Gangster Film","Comedy","The Musical","Melodrama","Film Noir","The Horror Film","Ideology","Auteurism","New Hollywood","Contemporary Cinema"] },
+  { t:"A Million Miles in a Thousand Years", a:"Donald Miller", y:2009, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9781400202232-M.jpg", c:["An Inciting Incident","A Character Who Wants Something","Conflict","A Sense of Meaning","Editing Your Life","What Makes a Good Story","Climbing the Mountain","The Ambition Scene","Loving the Tension","A Better Story","The Climax","Themes","Living a Great Story","The Ending","Starting Over"] },
+  { t:"Making Movies", a:"Sidney Lumet", y:1995, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9780679756606-M.jpg", c:["The Director","The Script","Style","The Camera","The Actor","The First Day","The Shoot","Music","Editing","Post-Production","The Studio","The Audience","Personal Films","The Long Haul","Passion"] },
+  { t:"Rebel Without a Crew", a:"Robert Rodriguez", y:1995, genre:"Film", img:"https://covers.openlibrary.org/b/isbn//b/isbn/9780525936312-M.jpg", c:["The Diary: January","The Diary: February","The Diary: March","The Diary: April","The Diary: May","The Diary: June","The Diary: July","The Diary: August","The Diary: September","The Diary: October","The Diary: November","The Diary: December","10 Minute Film School","The Columbia Deal","El Mariachi Goes to Hollywood"] },
+  { t:"Lynch on Lynch", a:"Chris Rodley", y:1997, genre:"Film", img:"", c:["Missoula","Art School","Eraserhead","The Elephant Man","Dune","Blue Velvet","Twin Peaks","Wild at Heart","Twin Peaks: Fire Walk With Me","Lost Highway","The Straight Story","Working Methods","Sound and Music","Ideas","The Inner World"] },
+
+  // ── SELF-HELP / PERSONAL DEVELOPMENT ──
+  { t:"Atomic Habits", a:"James Clear", y:2018, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780735211292-M.jpg", c:["The Surprising Power of Atomic Habits","How Your Habits Shape Your Identity","How to Build Better Habits in 4 Simple Steps","The Man Who Didn't Look Like an Athlete","The Best Way to Start a New Habit","Motivation Is Overrated; Environment Often Matters More","The Secret to Self-Control","How to Make a Habit Irresistible","The Role of Family and Friends in Shaping Your Habits","How to Find and Fix the Causes of Your Bad Habits","Walk Slowly, but Never Backward","The Law of Least Effort","How to Stop Procrastinating","How to Make Good Habits Inevitable","The Cardinal Rule of Behavior Change","How to Stick with Good Habits Every Day","How an Accountability Partner Can Change Everything","The Truth About Talent","The Goldilocks Rule","The Downside of Creating Good Habits"] },
+  { t:"The 7 Habits of Highly Effective People", a:"Stephen Covey", y:1989, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780743269513-M.jpg", c:["Inside-Out","The Seven Habits: An Overview","Be Proactive","Begin with the End in Mind","Put First Things First","Think Win/Win","Seek First to Understand, Then to Be Understood","Synergize","Sharpen the Saw","Inside-Out Again","Appendix: A Personal Note"] },
+  { t:"How to Win Friends and Influence People", a:"Dale Carnegie", y:1936, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780671723651-M.jpg", c:["This Book Was Written For You","Part One: Fundamental Techniques in Handling People","Part Two: Six Ways to Make People Like You","Part Three: How to Win People to Your Way of Thinking","Part Four: Be a Leader","In a Nutshell","Letters That Produced Miraculous Results","Seven Rules for Making Your Home Life Happier","How to Make People Glad to Do What You Want"] },
+  { t:"Thinking, Fast and Slow", a:"Daniel Kahneman", y:2011, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780374533557-M.jpg", c:["The Characters of the Story","Attention and Effort","The Lazy Controller","The Associative Machine","Cognitive Ease","Norms, Surprises, and Causes","A Machine for Jumping to Conclusions","How Judgments Happen","Answering an Easier Question","The Law of Small Numbers","Anchors","The Science of Availability","Availability, Emotion, and Risk","Tom W's Specialty","Linda: Less is More","Causes Trump Statistics","Regression to the Mean","Taming Intuitive Predictions","The Illusion of Understanding","The Illusion of Validity"] },
+  { t:"The Power of Now", a:"Eckhart Tolle", y:1997, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781577314806-M.jpg", c:["You Are Not Your Mind","Consciousness: The Way Out of Pain","Moving Deeply into the Now","Mind Strategies for Avoiding the Now","The State of Presence","The Inner Body","Portals into the Unmanifested","Enlightened Relationships","Beyond Happiness and Unhappiness There Is Peace","The Meaning of Surrender"] },
+  { t:"Mindset: The New Psychology of Success", a:"Carol Dweck", y:2006, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780345472328-M.jpg", c:["The Mindsets","Inside the Mindsets","The Truth About Ability and Accomplishment","Sports: The Mindset of a Champion","Business: Mindset and Leadership","Relationships: Mindsets in Love","Parents, Teachers, and Coaches","Changing Mindsets","Conclusion"] },
+  { t:"The Subtle Art of Not Giving a F*ck", a:"Mark Manson", y:2016, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780062457714-M.jpg", c:["Don't Try","Happiness Is a Problem","You Are Not Special","The Value of Suffering","You Are Always Choosing","You're Wrong About Everything","Failure Is the Way Forward","The Importance of Saying No","...And Then You Die"] },
+  { t:"Can't Hurt Me", a:"David Goggins", y:2018, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781544512280-M.jpg", c:["I Should Have Been a Statistic","Truth Hurts","The Impossible Task","Taking Souls","Armored Mind","It's Time to Go to War with Yourself","The Most Powerful Weapon","Talent Not Required","Uncommon Amongst Uncommon","The Empowerment of Failure","What If?","The Accountability Mirror","Schedule to Win","Cookie Jar","The Governor"] },
+  { t:"Man's Search for Meaning", a:"Viktor Frankl", y:1946, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780807014271-M.jpg", c:["Experiences in a Concentration Camp","Capos and Common Prisoners","The Psychology of the Prisoner","The Liberation","Logotherapy in a Nutshell","The Existential Vacuum","The Meaning of Life","The Essence of Existence","Freedom of Will","Will to Meaning"] },
+  { t:"The 4-Hour Workweek", a:"Timothy Ferriss", y:2007, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780307353139-M.jpg", c:["Cautions and Comparisons","Rules That Change the Rules","Dodging Bullets","System Reset","The End of Time Management","The Low-Information Diet","Interrupting Interruption","Outsourcing Life","Income Autopilot I","Income Autopilot II","Income Autopilot III","Disappearing Act","Beyond Repair","Mini-Retirements","Filling the Void"] },
+  { t:"Daring Greatly", a:"Brené Brown", y:2012, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781592408412-M.jpg", c:["Scarcity: Looking Inside Our Culture of 'Never Enough'","Debunking the Vulnerability Myths","Understanding and Combating Shame","The Vulnerability Armory","Mind the Gap","Disruptive Engagement","Wholehearted Parenting","Conclusion"] },
+  { t:"The Gifts of Imperfection", a:"Brené Brown", y:2010, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781592858491-M.jpg", c:["Courage, Compassion, and Connection","Exploring the Power of Love, Belonging, and Being Enough","The Things That Get in the Way","Guidepost #1: Cultivating Authenticity","Guidepost #2: Cultivating Self-Compassion","Guidepost #3: Cultivating a Resilient Spirit","Guidepost #4: Cultivating Gratitude and Joy","Guidepost #5: Cultivating Intuition and Trusting Faith","Guidepost #6: Cultivating Creativity","Guidepost #7: Cultivating Play and Rest","Guidepost #8: Cultivating Calm and Stillness","Guidepost #9: Cultivating Meaningful Work","Guidepost #10: Cultivating Laughter, Song, and Dance","Final Thoughts"] },
+  { t:"Influence: The Psychology of Persuasion", a:"Robert Cialdini", y:1984, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780061241895-M.jpg", c:["Weapons of Influence","Reciprocation: The Old Give and Take...and Take","Commitment and Consistency","Social Proof: Truths Are Us","Liking: The Friendly Thief","Authority: Directed Deference","Scarcity: The Rule of the Few","Instant Influence","How to Say No"] },
+  { t:"Deep Work", a:"Cal Newport", y:2016, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781455586691-M.jpg", c:["Deep Work Is Valuable","Deep Work Is Rare","Deep Work Is Meaningful","Work Deeply","Embrace Boredom","Quit Social Media","Drain the Shallows","Conclusion"] },
+  { t:"The War of Art", a:"Steven Pressfield", y:2002, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781936891023-M.jpg", c:["Resistance: Defining the Enemy","Resistance and Procrastination","Resistance and Sex","Resistance and Trouble","Resistance and Self-Doubt","Resistance and Fear","Turning Pro","A Professional is Different","The Professional Fears Starting","What a Writer's Day Feels Like","The Muse","Invoking the Muse","Angels and Hierarchies","The Higher Realm","We Are All Creative Beings"] },
+  { t:"Big Magic", a:"Elizabeth Gilbert", y:2015, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781594634727-M.jpg", c:["Courage","Enchantment","Permission","Persistence","Trust","Divinity"] },
+  { t:"Essentialism", a:"Greg McKeown", y:2014, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780804137386-M.jpg", c:["The Essentialist","Choose: The Invincible Power of Choice","Discern: The Unimportance of Practically Everything","Trade-off: Which Problem Do I Want?","Escape","Look","Play","Sleep","Select","Clarify","Dare","Uncommit","Edit","Limit","Buffer","Subtract","Progress","Flow","Focus","Be","The Essentialist Life"] },
+  { t:"The Obstacle Is the Way", a:"Ryan Holiday", y:2014, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781591846352-M.jpg", c:["Preface: What Stands in the Way Becomes the Way","Part I: Perception","Recognize Your Power","Steady Your Nerves","Control Your Emotions","Practice Objectivity","Alter Your Perspective","Is It Up to You?","Live in the Present Moment","Think Differently","Finding the Opportunity","Prepare to Act","Part II: Action","Get Moving","Practice Persistence","Iterate","Follow the Process","Do Your Job, Do It Right","What's Right Is What Works","In Praise of the Flank Attack","Use Obstacles Against Themselves","Channel Your Energy","Seize the Offensive","Prepare for None of It to Work","Part III: Will","The Discipline of the Will","Anticipation (Thinking Negatively)","The Art of Acquiescence","Love Everything That Happens","Perseverance","Something Bigger Than Yourself","Meditate on Your Mortality","Prepare for None of It to Work"] },
+  { t:"Grit: The Power of Passion and Perseverance", a:"Angela Duckworth", y:2016, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781501111105-M.jpg", c:["Showing Up","Distracted by Talent","Effort Counts Twice","How Gritty Are You?","Grit Grows","Interest","Practice","Purpose","Hope","Parenting for Grit","The Playing Fields of Grit","A Culture of Grit","Conclusion"] },
+  { t:"You Are a Badass", a:"Jen Sincero", y:2013, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780762447695-M.jpg", c:["My Subconscious Made Me Do It","The Almighty You","Present as a Pigeon","The Big Snooze","Self-Perception","Love the One You Is","Forgiveness","Your Inner Guidance System","The Almighty Subconscious","The Power of Your Word","Your Brain Is Your B*tch","Lead with Your Crotch","Give and Let Give","Gratitude: The Gateway Drug","Meditation","My Favorite Word","Money, Your New BFF","Be a Money Magnet","Your Brilliant Calling","Goal Digging"] },
+  { t:"The Courage to Be Disliked", a:"Ichiro Kishimi & Fumitake Koga", y:2013, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781501197277-M.jpg", c:["The First Night: Deny Trauma","The Second Night: All Problems Are Interpersonal Relationship Problems","The Third Night: Discard Other People's Tasks","The Fourth Night: Where the Center of the World Is","The Fifth Night: To Live in Earnest in the Here and Now"] },
+  { t:"The Four Agreements", a:"Don Miguel Ruiz", y:1997, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781878424310-M.jpg", c:["Domestication and the Dream of the Planet","The First Agreement: Be Impeccable with Your Word","The Second Agreement: Don't Take Anything Personally","The Third Agreement: Don't Make Assumptions","The Fourth Agreement: Always Do Your Best","The Toltec Path to Freedom: Breaking Old Agreements","The New Dream: Heaven on Earth"] },
+  { t:"Ikigai: The Japanese Secret to a Long and Happy Life", a:"Héctor García & Francesc Miralles", y:2016, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780143130727-M.jpg", c:["Ikigai: The Art of Staying Young","Antiaging Secrets","From Logotherapy to Ikigai","Find Flow in Everything You Do","Masters of Longevity","Lessons from Japan's Centenarians","The Ikigai Diet","Gentle Movements","Resilience and Wabi-Sabi","Epilogue: Ikigai, the Reason to Jump Out of Bed Each Morning"] },
+  { t:"Educated", a:"Tara Westover", y:2018, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780399590504-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18","Chapter 19","Chapter 20","Chapter 21","Chapter 22","Chapter 23","Chapter 24","Chapter 25","Chapter 26","Chapter 27","Chapter 28","Chapter 29","Chapter 30","Chapter 31","Chapter 32","Chapter 33","Chapter 34","Chapter 35","Chapter 36","Epilogue"] },
+  { t:"Born a Crime", a:"Trevor Noah", y:2016, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780399588174-M.jpg", c:["Prologue","Run","A Product of Two Worlds","Chameleon","Preacher","The Second Girl","Fufi","Outsider","Robert","The Mulberry Tree","A Young Man's Long Walk","National Service","Go Hitler!","My Mother's Life","A Note on Accents","Super Agent","The Mechanics of Moving to the Suburbs","The Proudly South African","Colorblind","The World Doesn't Love You","My Mother's God","Foreigners","Ubuntu"] },
+  { t:"The Glass Castle", a:"Jeannette Walls", y:2005, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780743247542-M.jpg", c:["A Woman on the Street","The Desert","Welch","New York City","Epilogue"] },
+  { t:"When Breath Becomes Air", a:"Paul Kalanithi", y:2016, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780812988406-M.jpg", c:["Foreword by Abraham Verghese","Part I: In Perfect Health I Begin","Part II: Cease Not till Death","Epilogue by Lucy Kalanithi"] },
+
+  // ── BUSINESS / PRODUCTIVITY ──
+  { t:"Zero to One", a:"Peter Thiel", y:2014, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780804139021-M.jpg", c:["The Challenge of the Future","Party Like It's 1999","All Happy Companies Are Different","The Ideology of Competition","Last Mover Advantage","You Are Not a Lottery Ticket","Follow the Money","Secrets","Foundations","The Mechanics of Mafia","If You Build It, Will They Come?","Man and Machine","Seeing Green","The Founder's Paradox","Stagnation or Singularity?"] },
+  { t:"Good to Great", a:"Jim Collins", y:2001, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780066620992-M.jpg", c:["Good Is the Enemy of Great","Level 5 Leadership","First Who... Then What","Confront the Brutal Facts","The Hedgehog Concept","A Culture of Discipline","Technology Accelerators","The Flywheel and the Doom Loop","From Good to Great to Built to Last","Appendix 1A: Research Background","Appendix 1B: The Eleven Good-to-Great Companies","Appendix 2: Good-to-Great Diagnostic Tool","Appendix 3: Frequently Asked Questions"] },
+  { t:"Start With Why", a:"Simon Sinek", y:2009, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9781591842804-M.jpg", c:["Assume You Know","Carrots and Sticks","The Golden Circle","This Is Not Opinion, This Is Biology","Clarity, Discipline and Consistency","The Emergence of Trust","How a Tipping Point Tips","Start With Why, But Know How","Know Why, Know How, Then What?","Communication Is Not About Speaking","When Why Goes Fuzzy","Split Happens","The Origins of a Why","The New Competition"] },
+  { t:"The Lean Startup", a:"Eric Ries", y:2011, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780307887894-M.jpg", c:["Start","Define","Learn","Experiment","Leap","Test","Measure","Pivot (or Persevere)","Batch","Grow","Adapt","Innovate","Epilogue: Waste Not"] },
+  { t:"Thinking in Bets", a:"Annie Duke", y:2018, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780735216358-M.jpg", c:["Life Is Poker, Not Chess","Wanna Bet?","Bet to Learn: Fielding the Unfolding Future","The Buddy System","Dissent to Win","Adventures in Mental Time Travel"] },
+  { t:"Never Split the Difference", a:"Chris Voss", y:2016, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780062407801-M.jpg", c:["The New Rules","Be a Mirror","Don't Feel Their Pain, Label It","Beware 'Yes'—Master 'No'","Trigger the Two Words That Immediately Transform Any Negotiation","Bend Their Reality","Create the Illusion of Control","Guarantee Execution","Bargain Hard","Find the Black Swan"] },
+
+  // ── PHILOSOPHY / STOICISM ──
+  { t:"Meditations", a:"Marcus Aurelius", y:180, genre:"Philosophy", img:"https://covers.openlibrary.org/b/isbn/9780812968255-M.jpg", c:["Book I: Debts and Lessons","Book II: On the River Gran, Among the Quadi","Book III: In Carnuntum","Book IV","Book V","Book VI","Book VII","Book VIII","Book IX","Book X","Book XI","Book XII"] },
+  { t:"Letters from a Stoic", a:"Seneca", y:65, genre:"Philosophy", img:"https://covers.openlibrary.org/b/isbn/9780140442106-M.jpg", c:["On Saving Time","On Discursiveness in Reading","On True and False Friendship","On the Terrors of Death","On the Philosopher's Mean","On Sharing Knowledge","On the Crowds","On the Philosopher and Society","On Philosophy and Friendship","On the Blissful Life","On Groundless Fears","On Old Age","On Noise","On the First Cause","On the Happy Life"] },
+  { t:"The Daily Stoic", a:"Ryan Holiday & Stephen Hanselman", y:2016, genre:"Philosophy", img:"https://covers.openlibrary.org/b/isbn/9780735211735-M.jpg", c:["January: Clarity","February: Passions and Emotions","March: Awareness","April: Unbiased Thought","May: Right Action","June: Problem Solving","July: Duty","August: Pragmatism","September: Fortitude and Resilience","October: Virtue and Kindness","November: Acceptance/Amor Fati","December: Meditation on Mortality"] },
+  { t:"Ego Is the Enemy", a:"Ryan Holiday", y:2016, genre:"Philosophy", img:"https://covers.openlibrary.org/b/isbn/9781591847816-M.jpg", c:["Introduction","Part I: Aspire","Talk, Talk, Talk","To Be or to Do?","Become a Student","Don't Be Passionate","Follow the Canvas Strategy","Restrain Yourself","Get Out of Your Own Head","The Danger of Early Pride","Work, Work, Work","Part II: Success","Always Stay a Student","Don't Tell Yourself a Story","What's Important to You?","Entitlement, Control, and Paranoia","Managing Yourself","Beware the Disease of Me","Meditate on the Immensity","Maintain Your Sobriety","For What Often Comes Next, Beware","Part III: Failure","Alive Time or Dead Time?","The Effort Is Enough","Draw the Line","Maintain Your Own Scorecard","Always Love","Postscript: A Note on What to Do With This Book"] },
+
+  // ── FICTION CLASSICS ──
+  { t:"To Kill a Mockingbird", a:"Harper Lee", y:1960, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780061743528-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18","Chapter 19","Chapter 20","Chapter 21","Chapter 22","Chapter 23","Chapter 24","Chapter 25","Chapter 26","Chapter 27","Chapter 28","Chapter 29","Chapter 30","Chapter 31"] },
+  { t:"The Great Gatsby", a:"F. Scott Fitzgerald", y:1925, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780743273565-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9"] },
+  { t:"1984", a:"George Orwell", y:1949, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780451524935-M.jpg", c:["Part One: Chapter 1","Part One: Chapter 2","Part One: Chapter 3","Part One: Chapter 4","Part One: Chapter 5","Part One: Chapter 6","Part One: Chapter 7","Part One: Chapter 8","Part Two: Chapter 1","Part Two: Chapter 2","Part Two: Chapter 3","Part Two: Chapter 4","Part Two: Chapter 5","Part Two: Chapter 6","Part Two: Chapter 7","Part Two: Chapter 8","Part Two: Chapter 9","Part Two: Chapter 10","Part Three: Chapter 1","Part Three: Chapter 2","Part Three: Chapter 3","Part Three: Chapter 4","Part Three: Chapter 5","Part Three: Chapter 6","Appendix: The Principles of Newspeak"] },
+  { t:"Brave New World", a:"Aldous Huxley", y:1932, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780060850524-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18"] },
+  { t:"The Catcher in the Rye", a:"J.D. Salinger", y:1951, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780316769174-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18","Chapter 19","Chapter 20","Chapter 21","Chapter 22","Chapter 23","Chapter 24","Chapter 25","Chapter 26"] },
+  { t:"Of Mice and Men", a:"John Steinbeck", y:1937, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780142000671-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6"] },
+  { t:"Fahrenheit 451", a:"Ray Bradbury", y:1953, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9781451673319-M.jpg", c:["Part One: The Hearth and the Salamander","Part Two: The Sieve and the Sand","Part Three: Burning Bright"] },
+  { t:"Lord of the Flies", a:"William Golding", y:1954, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780399501487-M.jpg", c:["The Sound of the Shell","Fire on the Mountain","Huts on the Beach","Painted Faces and Long Hair","Beast from Water","Beast from Air","Shadows and Tall Trees","Gift for the Darkness","A View to a Death","The Shell and the Glasses","Castle Rock","Cry of the Hunters"] },
+  { t:"The Alchemist", a:"Paulo Coelho", y:1988, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780062315007-M.jpg", c:["Prologue","Part One","Part Two"] },
+  { t:"Slaughterhouse-Five", a:"Kurt Vonnegut", y:1969, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780385333849-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10"] },
+
+  // ── CREATIVITY / WRITING ──
+  { t:"On Writing", a:"Stephen King", y:2000, genre:"Writing", img:"https://covers.openlibrary.org/b/isbn/9780684853529-M.jpg", c:["C.V.","What Writing Is","Toolbox","On Writing","On Living: A Postscript"] },
+  { t:"Bird by Bird", a:"Anne Lamott", y:1994, genre:"Writing", img:"https://covers.openlibrary.org/b/isbn/9780385480017-M.jpg", c:["Introduction","Part One: Writing","Short Assignments","Shitty First Drafts","Perfectionism","School Lunches","Polaroids","Character","Part Two: The Writing Frame of Mind","Dialogue","Set Design","False Starts","Plot","Part Three: Help Along the Way","The Moral Point of View","Broccoli","Writing Groups","Someone to Read Your Drafts","Part Four: Publication - and Other Reasons to Write","Writing a Present","Giving","Finding Your Voice","Radio Station KFKD","Jealousy","The Last Class"] },
+  { t:"The Elements of Style", a:"William Strunk Jr.", y:1918, genre:"Writing", img:"https://covers.openlibrary.org/b/isbn/9780205313426-M.jpg", c:["Elementary Rules of Usage","Elementary Principles of Composition","A Few Matters of Form","Words and Expressions Commonly Misused","An Approach to Style"] },
+  { t:"Zen in the Art of Writing", a:"Ray Bradbury", y:1990, genre:"Writing", img:"https://covers.openlibrary.org/b/isbn/9780887334122-M.jpg", c:["The Joy of Writing","Run Fast, Stand Still, or, The Thing at the Top of the Stairs, or, New Ghosts from Old Minds","How to Keep and Feed a Muse","The Long Road to Mars","Drunk, and in Charge of a Bicycle","Investing Dimes: Fahrenheit 451","Just This Side of Byzantium: Dandelion Wine","The Inherited Wish","On the Shoulders of Giants","Shooting Haiku in a Barrel","At What Temperature Do Books Burn?","Coda"] },
+
+  // ── MORE SCREENWRITING ──
+  { t:"Your Screenplay Sucks!", a:"William M. Akers", y:2008, genre:"Screenwriting", img:"", c:["Title Page","Logline","The First Ten Pages","Act One","The Midpoint","Act Two","Act Three","Character","Dialogue","Formatting","Subtext","Scene Description","The Rewrite","Coverage","Getting It Read"] },
+  { t:"The Hollywood Standard", a:"Christopher Riley", y:2005, genre:"Screenwriting", img:"", c:["Why Format Matters","Scene Headings","Action Lines","Character Names","Dialogue","Parentheticals","Transitions","Shots","Title Page","Revisions","A/B Scenes","Dual Dialogue","Montages","Phone Calls","Flashbacks"] },
+  { t:"Elephant Bucks", a:"Sheldon Bull", y:2007, genre:"Screenwriting", img:"", c:["What Is a Sitcom?","The World of the Show","The Characters","The Story","The Structure","The Teaser","Act One","Act Two","Act Three","The Tag","Dialogue","Rewriting","The Spec Script","Freelancing","Getting Staffed"] },
+  { t:"Stealing Fire from the Gods", a:"James Bonnet", y:2006, genre:"Screenwriting", img:"", c:["The Sacred Fire","The Story Organism","The Four Primal Patterns","The Empowerment Story","The Healing Story","The Spiritual Quest","The Romance Story","Characters","The Story Atom","The Action","Creating Superstructures","Mastering the Craft","The Symbols","Mythic Themes","Story Intelligence"] },
+  { t:"Writing Movies for Fun and Profit", a:"Robert Ben Garant & Thomas Lennon", y:2011, genre:"Screenwriting", img:"", c:["So You Want to Write a Movie","The Spec Script is Dead","Writing on Assignment","The Meeting","The Notes","The Rewrite","Sequels, Remakes, and Franchises","The Writer on Set","Writing TV","Making Your Own Movie","The Business","Agents and Managers","WGA","Your First Sale","So You Want to Write a Movie (Reprise)"] },
+  { t:"The Comic Toolbox", a:"John Vorhaus", y:1994, genre:"Screenwriting", img:"", c:["Why Is It Funny?","The Comic Perspective","Risk","Characters","Situation","Structure","Jokes and Gags","Dialogue","Tone","Parody and Satire","The Rule of Comic Commitment","How to Think Funny","Writing Exercises","Common Mistakes","Building a Comedy Career"] },
+
+  // ── MORE FILM ──
+  { t:"Cinema Speculation", a:"Quentin Tarantino", y:2022, genre:"Film", img:"https://covers.openlibrary.org/b/isbn/9780062966209-M.jpg", c:["Bullitt","Coogan's Bluff","The Getaway","Deliverance","Dirty Harry","Macon County Line","Rolling Thunder","Taxi Driver","Brian De Palma","Looking for Mr. Goodbar","Paradise Alley","A Boy and His Dog","Hi, Mom!"] },
+  { t:"The Big Picture: The Fight for the Future of Movies", a:"Ben Fritz", y:2018, genre:"Film", img:"", c:["The Son of Superman","Franchises Over Films","The Day Marvel Changed Hollywood","The Sony Hack","Inside the Hack","The Information Economy","Competing in the Age of Franchises","Netflix vs Hollywood","The Future of Storytelling","Can Movies Survive?","The Business of Making Art","What Will Be Lost","What Will Remain","The New Hollywood","Epilogue"] },
+  { t:"Robert Altman: The Oral Biography", a:"Mitchell Zuckoff", y:2009, genre:"Film", img:"", c:["Kansas City Kid","The Television Years","MASH","McCabe & Mrs. Miller","The Long Goodbye","Nashville","Buffalo Bill and the Indians","3 Women","A Wedding","Health and HealtH","Popeye","Come Back to the Five and Dime","Streamers","Secret Honor","Fool for Love","The Player","Short Cuts","Pret-a-Porter","The Gingerbread Man","Gosford Park","The Company","A Prairie Home Companion","Legacy"] },
+  { t:"The Wes Anderson Collection", a:"Matt Zoller Seitz", y:2013, genre:"Film", img:"", c:["Introduction: Worlds of His Own","Bottle Rocket","Rushmore","The Royal Tenenbaums","The Life Aquatic","The Darjeeling Limited","Fantastic Mr. Fox","Moonrise Kingdom","Visual Style","Color and Design","Music","Collaboration","Influences","A Conversation","Afterword"] },
+  { t:"What I Talk About When I Talk About Running", a:"Haruki Murakami", y:2007, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780307389831-M.jpg", c:["August 5, 2005. Honolulu, Hawaii","August 14. Honolulu","September 1. Kauai, Hawaii","October 3. Cambridge, Massachusetts","October 30. Cambridge","November 3. New York City","November 23. Cambridge","December 10. Cambridge","June 6, 2006. Tokyo"] },
+  { t:"Creativity, Inc.", a:"Ed Catmull", y:2014, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780812993011-M.jpg", c:["Animated","Pixar Is Born","A Defining Goal","Establishing Pixar's Identity","Unleashing the Creative Beast","Fear and Failure","The Hungry Beast and the Ugly Baby","Change and Randomness","The Hidden","Broadening Our View","The Unmade Future","A New Challenge","Notes Day","The Steve We Knew","Afterword: The Steve I Knew"] },
+  { t:"The Pixar Touch", a:"David Price", y:2008, genre:"Film", img:"", c:["George Lucas and the Birth of Computer Animation","Lucasfilm and the Computer Division","The Genesis of Pixar","Steve Jobs and the Sale","John Lasseter's Shorts","Tin Toy and an Oscar","The Disney Deal","Toy Story","The IPO","A Bug's Life","Toy Story 2","Monsters Inc","Finding Nemo","The Incredibles","Cars and the Break with Disney","Ratatouille and the Pixar-Disney Merger","WALL-E","Up","The Legacy"] },
+  { t:"The Men Who Would Be King", a:"Nicole LaPorte", y:2010, genre:"Film", img:"", c:["DreamWorks is Born","The Dream Team","The Factory","The First Films","Antz vs A Bug's Life","Saving Private Ryan","American Beauty","Gladiator","Shrek","A Beautiful Mind","Catch Me If You Can","Collateral Damage","The Breakup","DreamWorks for Sale","Epilogue"] },
+
+  // ── PSYCHOLOGY / NEUROSCIENCE ──
+  { t:"The Body Keeps the Score", a:"Bessel van der Kolk", y:2014, genre:"Psychology", img:"https://covers.openlibrary.org/b/isbn/9780670785933-M.jpg", c:["Lessons from Vietnam Veterans","Revolutions in Understanding Mind and Brain","Looking into the Brain: The Neuroscience of Trauma","Running for Your Life: The Anatomy of Survival","Body-Brain Connections","Losing Your Body, Losing Your Self","Getting on the Same Wavelength","Trapped in Trauma","What's Love Got to Do with It?","Developmental Trauma: The Hidden Epidemic","Uncovering Secrets","The Unbearable Heaviness of Remembering","Healing from Trauma: Owning Your Self","Language: Miracle and Tyranny","Letting Go of the Past: EMDR","Learning to Inhabit Your Body: Yoga","Putting the Pieces Together: Self-Leadership","Filling in the Holes: Creating Structures","Rewiring the Brain: Neurofeedback","Finding Your Voice: Communal Rhythms and Theater"] },
+  { t:"Emotional Intelligence", a:"Daniel Goleman", y:1995, genre:"Psychology", img:"https://covers.openlibrary.org/b/isbn/9780553383713-M.jpg", c:["Aristotle's Challenge","Anatomy of an Emotional Hijacking","When Smart Is Dumb","Know Thyself","Passion's Slaves","The Master Aptitude","The Roots of Empathy","The Social Arts","Intimate Enemies","Managing with Heart","Mind and Medicine","The Crucible of the Family","Trauma and Emotional Relearning","Temperament Is Not Destiny","Emotional Literacy"] },
+  { t:"Flow: The Psychology of Optimal Experience", a:"Mihaly Csikszentmihalyi", y:1990, genre:"Psychology", img:"https://covers.openlibrary.org/b/isbn/9780060920432-M.jpg", c:["Happiness Revisited","The Anatomy of Consciousness","Enjoyment and the Quality of Life","The Conditions of Flow","The Body in Flow","The Flow of Thought","Work as Flow","Enjoying Solitude and Other People","Cheating Chaos","The Making of Meaning"] },
+  { t:"Quiet: The Power of Introverts in a World That Can't Stop Talking", a:"Susan Cain", y:2012, genre:"Psychology", img:"https://covers.openlibrary.org/b/isbn/9780307352156-M.jpg", c:["The Rise of the 'Mighty Likeable Fellow'","The Myth of Charismatic Leadership","When Collaboration Kills Creativity","Is Temperament Destiny?","Beyond Temperament","Franklin Was a Politics, Eleanor Was a Conscience","Why Did Wall Street Crash and Warren Buffett Prosper?","Soft Power","When Should You Act More Extroverted Than You Really Are?","The Communication Gap","On Cobblers and CEOs","Conclusion"] },
+
+  // ── HEALTH / WELLNESS ──
+  { t:"Why We Sleep", a:"Matthew Walker", y:2017, genre:"Health", img:"https://covers.openlibrary.org/b/isbn/9781501144325-M.jpg", c:["To Sleep...","Caffeine, Jet Lag, and Melatonin","Defining and Generating Sleep","Ape Beds, Dinosaurs, and Napping","Changes in Sleep Across the Life Span","Your Mother and Shakespeare Knew","Too Extreme for the Guinness Book of World Records","Cancer, Heart Attacks, and a Shorter Life","Routinely Psychotic","Dream Creativity and Dream Control","Dreaming as Overnight Therapy","Dream Creativity and Dream Control (II)","iPads, Factory Whistles, and Nightcaps","Hurting and Helping the Brain","Sleep and Society","A New Vision for Sleep in the Twenty-First Century"] },
+  { t:"The Wim Hof Method", a:"Wim Hof", y:2020, genre:"Health", img:"", c:["Going Beyond","The Three Pillars","Cold Exposure","Breathing","Commitment","The Science","The Flow State","Connecting with Your Soul","Practice","The Future of Feeling","Becoming the Iceman","Tools and Techniques"] },
+
+  // ── CREATIVITY & ART ──
+  { t:"The Artist's Way", a:"Julia Cameron", y:1992, genre:"Creativity", img:"https://covers.openlibrary.org/b/isbn/9780874776942-M.jpg", c:["Spiritual Electricity: The Basic Principles","Week One: Recovering a Sense of Safety","Week Two: Recovering a Sense of Identity","Week Three: Recovering a Sense of Power","Week Four: Recovering a Sense of Integrity","Week Five: Recovering a Sense of Possibility","Week Six: Recovering a Sense of Abundance","Week Seven: Recovering a Sense of Connection","Week Eight: Recovering a Sense of Strength","Week Nine: Recovering a Sense of Compassion","Week Ten: Recovering a Sense of Self-Protection","Week Eleven: Recovering a Sense of Autonomy","Week Twelve: Recovering a Sense of Faith","Epilogue","Appendix"] },
+  { t:"Steal Like an Artist", a:"Austin Kleon", y:2012, genre:"Creativity", img:"https://covers.openlibrary.org/b/isbn/9780761169253-M.jpg", c:["Steal Like an Artist","Don't Wait Until You Know Who You Are to Get Started","Write the Book You Want to Read","Use Your Hands","Side Projects and Hobbies Are Important","The Secret: Do Good Work and Share It with People","Geography Is No Longer Our Master","Be Nice","Be Boring","Creativity Is Subtraction"] },
+  { t:"Keep Going", a:"Austin Kleon", y:2019, genre:"Creativity", img:"https://covers.openlibrary.org/b/isbn/9781523506644-M.jpg", c:["Every Day Is Groundhog Day","Build a Bliss Station","Forget the Noun, Do the Verb","Make Gifts","The Ordinary + Extra Attention = the Extraordinary","Slay the Art Monsters","You Are Allowed to Change Your Mind","When in Doubt, Tidy Up","Demons Hate Fresh Air","Plant Your Garden"] },
+  { t:"Show Your Work!", a:"Austin Kleon", y:2014, genre:"Creativity", img:"https://covers.openlibrary.org/b/isbn/9780761178972-M.jpg", c:["You Don't Have to Be a Genius","Think Process, Not Product","Share Something Small Every Day","Open Up Your Cabinet of Curiosities","Tell Good Stories","Teach What You Know","Don't Turn Into Human Spam","Learn to Take a Punch","Sell Out","Stick Around"] },
+
+  // ── LEADERSHIP ──
+  { t:"Extreme Ownership", a:"Jocko Willink & Leif Babin", y:2015, genre:"Leadership", img:"https://covers.openlibrary.org/b/isbn/9781250067050-M.jpg", c:["Extreme Ownership","No Bad Teams, Only Bad Leaders","Believe","Check the Ego","Cover and Move","Simple","Prioritize and Execute","Decentralized Command","Plan","Leading Up and Down the Chain of Command","Decisiveness amid Uncertainty","Discipline Equals Freedom"] },
+  { t:"Leaders Eat Last", a:"Simon Sinek", y:2014, genre:"Leadership", img:"https://covers.openlibrary.org/b/isbn/9781591845324-M.jpg", c:["Our Need to Feel Safe","Employees Are People Too","Belonging","Yeah, but...","The Courage to Do the Right Thing","The Abstract Generation","A Society of Addicts","When Hero Becomes Villain","The Abstract Challenge","Part Five: The Abstract Challenge","The Lion, Not the Gazelle","Conclusion: Earn Your Leadership"] },
+  { t:"Radical Candor", a:"Kim Scott", y:2017, genre:"Leadership", img:"https://covers.openlibrary.org/b/isbn/9781250103505-M.jpg", c:["Build Radically Candid Relationships","Get, Give, and Encourage Guidance","Understand What Motivates Each Person on Your Team","Drive Results Collaboratively","Hiring","Firing","Avoiding Burnout","Making Time","Epilogue: Keep Going"] },
+  { t:"The Effective Executive", a:"Peter Drucker", y:1967, genre:"Leadership", img:"https://covers.openlibrary.org/b/isbn/9780060833459-M.jpg", c:["Effectiveness Can Be Learned","Know Thy Time","What Can I Contribute?","Making Strength Productive","First Things First","The Elements of Decision-Making","Effective Decisions","Conclusion: Effectiveness Must Be Learned"] },
+
+  // ── COMMUNICATION / STORYTELLING ──
+  { t:"Talk Like TED", a:"Carmine Gallo", y:2014, genre:"Communication", img:"https://covers.openlibrary.org/b/isbn/9781250041128-M.jpg", c:["Unleash the Master Within","Master the Art of Storytelling","Have a Conversation","Teach Me Something New","Deliver Jaw-Dropping Moments","Lighten Up","Stick to the 18-Minute Rule","Paint a Mental Picture with Multisensory Experiences","Stay in Your Lane","Conclusion: The Uncommon Combination"] },
+  { t:"Resonate", a:"Nancy Duarte", y:2010, genre:"Communication", img:"", c:["Why Most Presentations Don't Work","The Secret Structure of Great Talks","How Stories Create Change","The Audience as Hero","Creating Contrast","Emotional Appeal","Visual Appeal","The Mentor's Journey","Transformation","Spreading Your Ideas","Build the S.T.A.R. Moment","Likability","Delivery","Conclusion","Appendix"] },
+  { t:"The Storytelling Animal", a:"Jonathan Gottschall", y:2012, genre:"Communication", img:"https://covers.openlibrary.org/b/isbn/9780547391403-M.jpg", c:["The Palace of Possibility","The Riddle of Fiction","Hell Is Story-Friendly","Night Story","The Mind Is a Storyteller","The Moral of the Story","Ink People Change the World","Life Stories","Afterword: The Future of Story"] },
+
+  // ── TECH & INNOVATION ──
+  { t:"The Innovator's Dilemma", a:"Clayton Christensen", y:1997, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780875845852-M.jpg", c:["How Can Great Firms Fail?","Value Networks and the Impetus to Innovate","Disruptive Technological Change in the Mechanical Excavator Industry","What Goes Up, Can't Go Down","Give Responsibility for Disruptive Technologies to Organizations Whose Customers Need Them","Match the Size of the Organization to the Size of the Market","Discovering New and Emerging Markets","How to Appraise Your Organization's Capabilities and Disabilities","Performance Provided, Market Demand, and the Product Life Cycle","Managing Disruptive Technological Change","The Dilemmas of Innovation"] },
+  { t:"The Hard Thing About Hard Things", a:"Ben Horowitz", y:2014, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9780062273208-M.jpg", c:["From Communist to Venture Capitalist","Build a Company","The Struggle","When Things Fall Apart","Take Care of the People, the Products, and the Profits—In That Order","Lead Bullets","Follow the Logic, Not the Crowd","The Right Kind of Ambition","The Law of Crappy People","Management Debt","Titles and Promotions","When Smart People Are Bad Employees","Peacetime CEO/Wartime CEO","The Fine Line Between Fear and Courage","Building Executive Teams","Hiring Executives","Demoting a Loyal Friend","Lies That Losers Tell","Management Quality Assurance","The Most Difficult CEO Skill","Taking Care of the People"] },
+
+  // ── ADDITIONAL FILM & SCREENWRITING ──
+  { t:"The Director's Vision", a:"Louis Phillips", y:1999, genre:"Film", img:"", c:["What Is Direction?","Preproduction","Working with the Script","Casting","Working with Actors","The Rehearsal Process","On the Set","Visual Language","Working with the Crew","Post-Production","Working with Music","The Director's Relationship with the Studio","Independent Filmmaking","Your Career","Finding Your Voice"] },
+  { t:"Behind the Seen", a:"Charles Koppelman", y:2004, genre:"Film", img:"", c:["Introduction: The New Editing","Walter Murch and Cold Mountain","The First Days","Logging and Logging","The Assembly","A Day in the Life","Structure Emerges","Temp Music","Studio Screening","Notes and Cuts","Mixing","Color Timing","Final Cut","The Theatrical Release","The DVD and Beyond"] },
+  { t:"Cut to the Chase", a:"Sam O'Steen", y:2001, genre:"Film", img:"", c:["What Editing Is","The Tools","Organization","The Assembly Cut","The First Cut","Working With the Director","Working With Music","Working With Sound","Special Effects","The Temp Dub","The Studio Screening","The Final Cut","Career Advice","A Final Word"] },
+  { t:"The Visual Story", a:"Bruce Block", y:2001, genre:"Film", img:"", c:["Visual Story Components","Space","Line and Shape","Tone","Color","Movement","Rhythm","Composing a Shot","Scene Breakdown","Visual Style","Subtext and Contrast","Storyboarding","The Look","Cinematography Basics","Putting It Together"] },
+  { t:"Screenwriting: The Sequence Approach", a:"Paul Joseph Gulino", y:2004, genre:"Screenwriting", img:"", c:["The Sequence Approach","Sequence One","Sequence Two","Sequences Three and Four","Sequence Five","Sequence Six","Sequences Seven and Eight","A Worked Example","Casablanca","The Shawshank Redemption","Tootsie","Analyzing Your Own Work","Sequences in Television","The Short Film","Appendix"] },
+  { t:"The Writer's Journey", a:"Christopher Vogler", y:1992, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9781932907360-M.jpg", c:["Myth and the Moviegoer","A Practical Guide","A Hero's Journey","The Ordinary World","The Call to Adventure","Refusal of the Call","Meeting with the Mentor","Crossing the First Threshold","Tests, Allies, and Enemies","Approach to the Inmost Cave","The Ordeal","The Reward","The Road Back","The Resurrection","Return with the Elixir","Dealing with the Journey"] },
+  { t:"Into the Woods: A Five-Act Journey Into Story", a:"John Yorke", y:2013, genre:"Screenwriting", img:"https://covers.openlibrary.org/b/isbn/9780715643181-M.jpg", c:["The Five-Act Structure","The Three-Act Structure Revisited","Character","Backstory and Theme","Scene Construction","Dialogue","Genre","Rhythm and Tone","Theme and Metaphor","In the Midpoint","The Inmost Cave","The Final Ordeal","Endings","The Journey of the Writer","Why We Tell Stories"] },
+  { t:"Invisible Ink: A Practical Guide to Building Stories That Resonate", a:"Brian McDonald", y:2010, genre:"Screenwriting", img:"", c:["Story Structure","Armature","What Is a Story?","Character","Character vs. Story","Dialogue","Subtext","Theme","Set Up and Pay Off","Economy","Convention and Cliche","Editing","Feedback","Collaboration","Finding Your Voice"] },
+  { t:"The 101 Habits of Highly Successful Screenwriters", a:"Karl Iglesias", y:2001, genre:"Screenwriting", img:"", c:["The Mindset of Success","Developing the Professional Attitude","Creating the Right Environment","The Daily Habit","Research and Inspiration","Character Creation","Story Development","The Craft of Dialogue","Scene Writing","Structure","Revision Habits","The Business Side","Networking","Pitching","Staying the Course"] },
+  { t:"Cinematic Storytelling", a:"Jennifer Van Sijll", y:2005, genre:"Screenwriting", img:"", c:["Visual Devices","Action","The Establishing Shot","Point of View","The Reaction Shot","The Cutaway","Parallel Editing","The Montage","Camera Movement","Composition","Lighting","Color","Sound","Silence","Subtext"] },
+
+  // ── ADDITIONAL SELF-HELP ──
+  { t:"The 48 Laws of Power", a:"Robert Greene", y:1998, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780140280197-M.jpg", c:["Law 1: Never Outshine the Master","Law 2: Never Put Too Much Trust in Friends","Law 3: Conceal Your Intentions","Law 4: Always Say Less than Necessary","Law 5: So Much Depends on Reputation","Law 6: Court Attention at All Costs","Law 7: Get Others to Do the Work for You","Law 8: Make Other People Come to You","Law 9: Win Through Your Actions","Law 10: Infection: Avoid the Unhappy","Law 11: Learn to Keep People Dependent on You","Law 12: Use Selective Honesty and Generosity","Law 13: Appeal to Self-Interest","Law 14: Pose as a Friend, Work as a Spy","Law 15: Crush Your Enemy Totally"] },
+  { t:"Mastery", a:"Robert Greene", y:2012, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780670024964-M.jpg", c:["Discover Your Calling: The Life's Task","Submit to Reality: The Ideal Apprenticeship","Absorb the Master's Power: The Mentor Dynamic","See People as They Are: Social Intelligence","Awaken the Dimensional Mind: The Creative-Active","Fuse the Intuitive with the Rational: Mastery","Appendix I: The Roots of Mastery","Appendix II: Contemporary Masters on Mastery"] },
+  { t:"The Laws of Human Nature", a:"Robert Greene", y:2018, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780525428145-M.jpg", c:["Master Your Emotional Self","Transform Self-Love into Empathy","See Through People's Masks","Determine the Strength of People's Character","Become an Elusive Object of Desire","Elevate Your Perspective","Soften People's Resistance by Confirming Their Self-Opinion","Change Your Circumstances by Changing Your Attitude","Confront Your Dark Side","Beware the Fragile Ego","Know Your Limits","Reconnect to the Masculine or Feminine Within You","Advance with a Sense of Purpose","Resist the Downward Pull of the Group","Make Them Want to Follow You","See the Hostility Behind the Friendly Facade","Seize the Historical Moment"] },
+  { t:"Feeling Good: The New Mood Therapy", a:"David Burns", y:1980, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780380810336-M.jpg", c:["A Breakthrough in the Treatment of Mood Disorders","How to Diagnose Your Moods","Getting Down to Root Causes","Start by Changing the Way You Feel","The Thinking-Feeling Connection","Cognitive Distortions","How to Crush Guilt","Verbal Judo","Ways of Defeating Distorted Thinking","The Approval Addiction","The Love Addiction","Your Work Is Not Your Worth","Feeling Good About Your Work","Coping with Anger","Causes and Cures for Procrastination"] },
+  { t:"The Lean Six Sigma Pocket Toolbook", a:"Michael George", y:2004, genre:"Business", img:"", c:["Introduction to Lean Six Sigma","Define Phase Tools","Measure Phase Tools","Analyze Phase Tools","Improve Phase Tools","Control Phase Tools","Lean Tools","Six Sigma Statistics","Project Management","Change Management","Team Tools","Creative Thinking","Data Collection","Process Mapping","Appendix"] },
+  { t:"The One Thing", a:"Gary Keller", y:2013, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9781885167774-M.jpg", c:["The One Thing","The Domino Effect","Success Leaves Clues","Everything Matters Equally","Multitasking","A Disciplined Life","Willpower Is Always on Will-Call","A Balanced Life","Big Is Bad","The Focusing Question","The Success Habit","The Path to Great Answers","Live with Purpose","Live by Priority","Live for Productivity","The Three Commitments","The Four Thieves","The Journey"] },
+  { t:"The Millionaire Fastlane", a:"MJ DeMarco", y:2011, genre:"Business", img:"", c:["Wealth in a Wheelchair","How I Screwed 'Get Rich Slow'","The Road Trip to Wealth","The Fastlane Roadmap","Wealth: The Pot of Gold at the End","Your Roadmap Destination: Wealth","The Three Roads to Wealth","The Slowlane: Your Subscription to Mediocrity","The Fastlane Roadmap","The Law of Effection","The 5 Fastlane Commandments","Change the Game","Build a Business, Not a Career","The Right Lane","Your Turn"] },
+  { t:"Rich Dad Poor Dad", a:"Robert Kiyosaki", y:1997, genre:"Business", img:"https://covers.openlibrary.org/b/isbn/9781612681108-M.jpg", c:["Rich Dad Poor Dad","The Rich Don't Work for Money","Why Teach Financial Literacy?","Mind Your Own Business","The History of Taxes and the Power of Corporations","The Rich Invent Money","Work to Learn—Don't Work for Money","Overcoming Obstacles","Getting Started","Still Want More? Here Are Some To Do's","Epilogue"] },
+
+  // ── ADDITIONAL MEMOIR ──
+  { t:"The Diary of a Young Girl", a:"Anne Frank", y:1947, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780553296983-M.jpg", c:["Introduction","1942","1943","1944","Afterword"] },
+  { t:"I Know Why the Caged Bird Sings", a:"Maya Angelou", y:1969, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780553279374-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18","Chapter 19","Chapter 20","Chapter 21","Chapter 22","Chapter 23","Chapter 24","Chapter 25","Chapter 26","Chapter 27","Chapter 28","Chapter 29","Chapter 30","Chapter 31","Chapter 32","Chapter 33","Chapter 34","Chapter 35","Chapter 36"] },
+  { t:"Shoe Dog", a:"Phil Knight", y:2016, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9781501135927-M.jpg", c:["1962","1963","1964","1965","1966","1967","1968","1969","1970","1971","1972","1975","1976","1977","1978","1980","Night"] },
+  { t:"Open", a:"Andre Agassi", y:2009, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780307268198-M.jpg", c:["Part One: The Dragon","Part Two: The Boy","Part Three: The Brat","Part Four: The Warrior","Part Five: The Exile","Part Six: The Legend","Part Seven: The Teacher","Part Eight: The Family Man"] },
+  { t:"The Autobiography of Malcolm X", a:"Malcolm X & Alex Haley", y:1965, genre:"Memoir", img:"https://covers.openlibrary.org/b/isbn/9780345350688-M.jpg", c:["Nightmare","Mascot","Homeboy","Laura","Harlemite","Detroit Red","Caught","Trapped","Caught","Satan","Saved","Savior","Minister Malcolm X","Black Muslims","Icarus","Out","Mecca","El-Hajj Malik El-Shabazz","1965","Epilogue by Alex Haley"] },
+
+  // ── SCIENCE POPULAR ──
+  { t:"A Brief History of Time", a:"Stephen Hawking", y:1988, genre:"Science", img:"https://covers.openlibrary.org/b/isbn/9780553380163-M.jpg", c:["Our Picture of the Universe","Space and Time","The Expanding Universe","The Uncertainty Principle","Elementary Particles and the Forces of Nature","Black Holes","Black Holes Ain't So Black","The Origin and Fate of the Universe","The Arrow of Time","Wormholes and Time Travel","The Unification of Physics","Conclusion"] },
+  { t:"The Selfish Gene", a:"Richard Dawkins", y:1976, genre:"Science", img:"https://covers.openlibrary.org/b/isbn/9780198575191-M.jpg", c:["Why Are People?","The Replicators","Immortal Coils","The Gene Machine","Aggression: Stability and the Selfish Machine","Genesmanship","Family Planning","Battle of the Generations","Battle of the Sexes","You Scratch My Back, I'll Ride on Yours","Memes: The New Replicators","Nice Guys Finish First","The Long Reach of the Gene"] },
+  { t:"Sapiens: A Brief History of Humankind", a:"Yuval Noah Harari", y:2011, genre:"Science", img:"https://covers.openlibrary.org/b/isbn/9780062316097-M.jpg", c:["An Animal of No Significance","The Tree of Knowledge","A Day in the Life of Adam and Eve","History's Biggest Fraud","History's Greatest Fraud","Building Pyramids","Memory Overload","There is No Justice in History","The Arrow of History","The Scent of Money","Imperial Visions","The Law of Religion","The Secret of Success","The Discovery of Ignorance","The Marriage of Science and Empire","The Capitalist Creed","The Wheels of Industry","A Permanent Revolution","And They Lived Happily Ever After","The End of Homo Sapiens"] },
+
+  // ── ADDITIONAL MISC ──
+  { t:"The Midnight Library", a:"Matt Haig", y:2020, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780525559474-M.jpg", c:["Between Life and Death","The Librarian","The Disappointments","What She Had Failed to Do","The Book of Regrets","At 00:00:00","Root Beer","String Theory","Nineteen Years Ago","The Chess Genius","The Olympic Swimmer","Glaciology","The Pub","Hugo","A Slide Show of Possible Lives","A Polar Bear","The Scale of Discovery","Regretting Regret","The Courage to Be You","We Only Have One Life","Conclusion: The Infinite Library"] },
+  { t:"Project Hail Mary", a:"Andy Weir", y:2021, genre:"Fiction", img:"https://covers.openlibrary.org/b/isbn/9780593135204-M.jpg", c:["Chapter 1","Chapter 2","Chapter 3","Chapter 4","Chapter 5","Chapter 6","Chapter 7","Chapter 8","Chapter 9","Chapter 10","Chapter 11","Chapter 12","Chapter 13","Chapter 14","Chapter 15","Chapter 16","Chapter 17","Chapter 18","Chapter 19","Chapter 20","Chapter 21","Chapter 22","Chapter 23","Chapter 24","Chapter 25","Chapter 26","Chapter 27","Epilogue"] },
+  { t:"Breath: The New Science of a Lost Art", a:"James Nestor", y:2020, genre:"Health", img:"https://covers.openlibrary.org/b/isbn/9780735213616-M.jpg", c:["The Worst Breathers in the Animal Kingdom","Mouthbreathing","Nose","Exhale","Slow","Less","Chew","More, on Occasion","Hold It","Fast, Slow, and Not at All","Appendix: Breathing Methods"] },
+  { t:"Range: Why Generalists Triumph in a Specialized World", a:"David Epstein", y:2019, genre:"Self-Help", img:"https://covers.openlibrary.org/b/isbn/9780735214484-M.jpg", c:["The Cult of the Head Start","How the Wicked World Was Made","When Less of the Same Is More","Learning, Fast and Slow","Thinking Outside Experience","The Trouble with Too Much Grit","Flirting with Your Possible Selves","The Outsider Advantage","Lateral Thinking with Withered Technology","Fooled by Expertise","Learning to Drop Your Familiar Tools","Deliberate Amateurs","Conclusion: Expanding Your Range"] },
+  { t:"The Extended Phenotype", a:"Richard Dawkins", y:1982, genre:"Science", img:"", c:["Necker Cubes and Buffaloes","Genetic Determinism and Gene Selectionism","An Agony in Five Fits","Arms Races and Manipulation","The Active Germ-Line Replicator","Organisms, Groups and Memes: Replicators or Vehicles?","Selfish DNA, Jumping Genes, and a Lamarckian Scare","Outlaws and Modifiers","Manipulation","The Manipulation of Space","Action at a Distance","Host Phenotypes of Parasite Genes","The Extended Phenotype Revisited"] },
+];
+
+// Helpers for the DB
+function searchDB(q) {
+  if (!q || q.length < 2) return [];
+  const lower = q.toLowerCase();
+  const results = BOOK_DB.filter(b =>
+    b.t.toLowerCase().includes(lower) ||
+    b.a.toLowerCase().includes(lower) ||
+    b.genre.toLowerCase().includes(lower)
+  );
+  // Sort: exact title match first, then title starts-with, then others
+  results.sort((a, b) => {
+    const at = a.t.toLowerCase(), bt = b.t.toLowerCase();
+    if (at === lower) return -1;
+    if (bt === lower) return 1;
+    if (at.startsWith(lower)) return -1;
+    if (bt.startsWith(lower)) return 1;
+    return 0;
+  });
+  return results.slice(0, 8);
+}
+
+// ── Render ──
+function render() {
+  const bl = document.getElementById('bookList');
+  const em = document.getElementById('empty');
+  em.style.display = books.length ? 'none' : 'block';
+  bl.innerHTML = '';
+  books.forEach((b, bi) => {
+    const si = bi % 6;
+    const done = b.chapters.filter(c => c.keypoints || c.audioData || c.notes).length;
+    const allDone = done === b.chapters.length;
+    const el = document.createElement('div');
+    el.className = 'book-card';
+    el.dataset.bi = bi;
+    const spineContent = b.img
+      ? `<img src="${esc(b.img)}" alt="${esc(b.title)}" onerror="this.style.display='none';this.parentNode.textContent='${esc(b.title.slice(0,2).toUpperCase())}'">`
+      : b.title.slice(0,2).toUpperCase();
+    el.innerHTML = `
+      <div class="book-header" onclick="toggleBook(${bi})">
+        <div class="book-spine spine-${si}">${spineContent}</div>
+        <div class="book-info">
+          <div class="book-title">${esc(b.title)}</div>
+          <div class="book-author">${esc(b.author)} &middot; ${b.year||''}</div>
+        </div>
+        <div class="book-progress">
+          <span class="progress-pill${allDone?' done':''}">${done}/${b.chapters.length} noted</span>
+          <button class="btn-remove-book" onclick="removeBook(event,${bi})" title="Remove book">✕</button>
+          <span class="chev${b.open?' open':''}">&#9660;</span>
+        </div>
+      </div>
+      ${b.open ? `<div class="ch-list">${b.chapters.map((ch, ci) => {
+        const hasAudio = !!ch.audioData;
+        const hasNote = !!ch.keypoints;
+        const badgeClass = hasAudio ? 'audio-noted' : (hasNote ? 'noted' : 'empty');
+        const badgeText = hasAudio ? '&#10003;' : (hasNote ? 'Noted' : 'Add note');
+        return `<div class="ch-row" onclick="openNote(${bi},${ci})">
+          <span class="ch-num">${ci+1}</span>
+          <span class="ch-title">${esc(ch.title)}</span>
+          <span class="ch-badge ${badgeClass}">${badgeText}</span>
+        </div>`;
+      }).join('')}</div>` : ''}`;
+    bl.appendChild(el);
+  });
+}
+
+function toggleBook(bi) { books[bi].open = !books[bi].open; save(); render(); }
+
+function removeBook(e, bi) {
+  e.stopPropagation();
+  if (!confirm(`Remove "${books[bi].title}" and all its notes?`)) return;
+  books.splice(bi, 1);
+  save(); render();
+}
+
+// ── Add book modal ──
+document.getElementById('addBtn').onclick = () => {
+  showModal(`
+    <div class="modal-header">
+      <div class="modal-chapter-label">Library</div>
+      <div class="modal-title">Add a book</div>
+    </div>
+    <div class="modal-body">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tabSearch" onclick="switchTab('search')">🔍 Search Library</button>
+        <button class="mode-tab" id="tabManual" onclick="switchTab('manual')">✏️ Add Manually</button>
+      </div>
+      <div id="tabSearchContent">
+        <label class="field-label">Search by title, author, or genre</label>
+        <div class="search-input-wrap">
+          <input class="search-input" id="searchIn" placeholder="e.g. Save the Cat, Atomic Habits, screenwriting..." autocomplete="off" oninput="onSearch()" />
+        </div>
+        <div class="hint-text" id="hint">Start typing — 300 books available</div>
+        <div id="suggBox"></div>
+        <div id="previewBox"></div>
+      </div>
+      <div id="tabManualContent" style="display:none;">
+        <div class="manual-field">
+          <label class="field-label">Book Title *</label>
+          <input class="manual-input" id="manTitle" placeholder="e.g. The Art of War" />
+        </div>
+        <div class="manual-field">
+          <label class="field-label">Author *</label>
+          <input class="manual-input" id="manAuthor" placeholder="e.g. Sun Tzu" />
+        </div>
+        <div class="manual-field">
+          <label class="field-label">Year</label>
+          <input class="manual-input" id="manYear" placeholder="e.g. 2023" type="number" />
+        </div>
+        <div class="manual-field">
+          <label class="field-label">Cover Image URL <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input class="manual-input" id="manImg" placeholder="https://..." oninput="previewManImg()" />
+          <div class="img-preview-wrap">
+            <img id="manImgPreview" class="img-preview" src="" alt="Preview" />
+            <span id="manImgHint" style="font-size:11px;color:var(--text-3);">Paste a cover image URL to preview</span>
+          </div>
+        </div>
+        <div class="manual-field">
+          <label class="field-label">Chapters *</label>
+          <textarea class="chapters-input-area" id="manChapters" placeholder="Enter one chapter per line:&#10;Chapter 1: The Beginning&#10;Chapter 2: The Middle&#10;Chapter 3: The End"></textarea>
+          <div class="manual-hint">Enter one chapter title per line. You can always add or edit later.</div>
+        </div>
+        <div id="manualError" style="font-size:12px;color:var(--warn);margin-top:8px;min-height:16px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="addOk" onclick="doAdd()" disabled>Add book</button>
+    </div>
+  `);
+  setTimeout(() => document.getElementById('searchIn').focus(), 60);
+};
+
+let _sel = null;
+let _activeTab = 'search';
+
+function switchTab(tab) {
+  _activeTab = tab;
+  _sel = null;
+  document.getElementById('tabSearch').classList.toggle('active', tab === 'search');
+  document.getElementById('tabManual').classList.toggle('active', tab === 'manual');
+  document.getElementById('tabSearchContent').style.display = tab === 'search' ? '' : 'none';
+  document.getElementById('tabManualContent').style.display = tab === 'manual' ? '' : 'none';
+  document.getElementById('addOk').disabled = tab === 'search';
+  if (tab === 'manual') {
+    document.getElementById('addOk').disabled = false;
+    setTimeout(() => document.getElementById('manTitle').focus(), 60);
+  }
+}
+
+function previewManImg() {
+  const url = document.getElementById('manImg').value.trim();
+  const img = document.getElementById('manImgPreview');
+  const hint = document.getElementById('manImgHint');
+  if (url) {
+    img.src = url;
+    img.classList.add('shown');
+    img.onerror = () => { img.classList.remove('shown'); hint.textContent = 'Could not load image'; };
+    img.onload = () => { hint.textContent = '✓ Image loaded'; };
+  } else {
+    img.classList.remove('shown');
+    hint.textContent = 'Paste a cover image URL to preview';
+  }
+}
+
+function onSearch() {
+  const q = document.getElementById('searchIn').value.trim();
+  _sel = null;
+  document.getElementById('addOk').disabled = true;
+  document.getElementById('previewBox').innerHTML = '';
+  const hint = document.getElementById('hint');
+  const suggBox = document.getElementById('suggBox');
+  if (!q || q.length < 2) { hint.textContent = 'Start typing — 300 books available'; suggBox.innerHTML = ''; return; }
+  const results = searchDB(q);
+  window._results = results;
+  if (!results.length) { hint.textContent = 'No matches — try the Manual tab to add your own'; suggBox.innerHTML = ''; return; }
+  hint.textContent = `${results.length} result${results.length > 1 ? 's' : ''}`;
+  suggBox.innerHTML = `<div class="sugg-list">${results.map((b,i) => `
+    <div class="sugg-item" id="si${i}" onclick="selectBook(${i})">
+      <div class="sugg-thumb">${b.img ? `<img src="${esc(b.img)}" alt="" onerror="this.style.display='none'">` : '📖'}</div>
+      <div class="sugg-info">
+        <div class="sugg-title">${esc(b.t)}</div>
+        <div class="sugg-meta">${esc(b.a)} &middot; ${b.y}</div>
+      </div>
+      <span class="sugg-genre">${esc(b.genre)}</span>
+    </div>`).join('')}</div>`;
+}
+
+function selectBook(i) {
+  _sel = window._results[i];
+  document.querySelectorAll('.sugg-item').forEach(el => el.classList.remove('selected'));
+  const si = document.getElementById('si'+i);
+  if (si) si.classList.add('selected');
+  document.getElementById('hint').textContent = `${_sel.c.length} chapters`;
+  document.getElementById('previewBox').innerHTML = `
+    <div class="preview-box">
+      <div class="preview-book-title">${esc(_sel.t)}</div>
+      <div class="preview-book-meta">${esc(_sel.a)} &middot; ${_sel.y} &middot; ${_sel.c.length} chapters &middot; <em>${esc(_sel.genre)}</em></div>
+      <div class="preview-ch-list">${_sel.c.map((c,i) => `
+        <div class="preview-ch"><span class="preview-ch-n">${i+1}</span><span>${esc(c)}</span></div>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('addOk').disabled = false;
+}
+
+function doAdd() {
+  if (_activeTab === 'search') {
+    if (!_sel) return;
+    books.push({ title: _sel.t, author: _sel.a, year: _sel.y, img: _sel.img || '', chapters: _sel.c.map(t => ({ title: t, keypoints: null, notes: '', audioData: null })), open: true });
+    save(); render(); closeModal();
+  } else {
+    // Manual entry
+    const title = document.getElementById('manTitle').value.trim();
+    const author = document.getElementById('manAuthor').value.trim();
+    const year = parseInt(document.getElementById('manYear').value) || '';
+    const img = document.getElementById('manImg').value.trim();
+    const rawChapters = document.getElementById('manChapters').value.trim();
+    const errEl = document.getElementById('manualError');
+    if (!title) { errEl.textContent = 'Please enter a book title.'; return; }
+    if (!author) { errEl.textContent = 'Please enter an author name.'; return; }
+    if (!rawChapters) { errEl.textContent = 'Please enter at least one chapter.'; return; }
+    const chapterLines = rawChapters.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (chapterLines.length === 0) { errEl.textContent = 'Please enter at least one chapter.'; return; }
+    errEl.textContent = '';
+    books.push({ title, author, year, img, chapters: chapterLines.map(t => ({ title: t, keypoints: null, notes: '', audioData: null })), open: true });
+    save(); render(); closeModal();
+  }
+}
+
+// ── Note / chapter modal ──
+function buildSavedAudioHTML(bi, ci) {
+  const ch = books[bi].chapters[ci];
+  if (!ch.audioData) return '';
+  return `
+    <div class="saved-audio-box" id="savedAudioBox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="transcript-label" style="margin-bottom:0;">&#127897; Saved recording</div>
+        <button class="btn-delete-audio" onclick="deleteAudio(${bi},${ci})" title="Delete recording">🗑 Delete</button>
+      </div>
+      <audio id="savedAudioPlayer" controls style="width:100%;height:36px;border-radius:6px;"></audio>
+    </div>`;
+}
+
+function attachSavedAudio(bi, ci) {
+  const ch = books[bi].chapters[ci];
+  const player = document.getElementById('savedAudioPlayer');
+  if (!player || !ch.audioData) return;
+  // Use blob URL for reliable playback — avoids browser limits on data: URLs in src
+  try {
+    const byteStr = atob(ch.audioData.split(',')[1]);
+    const mimeMatch = ch.audioData.match(/data:([^;]+);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'audio/webm';
+    const ab = new ArrayBuffer(byteStr.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+    const blob = new Blob([ab], { type: mime });
+    const url = URL.createObjectURL(blob);
+    player.src = url;
+    player.onended = () => {}; // keep alive until modal closes
+    // store so we can revoke later
+    _recState._savedBlobUrl = url;
+  } catch(e) {
+    // fallback: direct data URL
+    player.src = ch.audioData;
+  }
+}
+
+function deleteAudio(bi, ci) {
+  if (!confirm('Delete this recording?')) return;
+  books[bi].chapters[ci].audioData = null;
+  // revoke any blob URL
+  if (_recState._savedBlobUrl) { URL.revokeObjectURL(_recState._savedBlobUrl); _recState._savedBlobUrl = null; }
+  save(); render();
+  const box = document.getElementById('savedAudioBox');
+  if (box) box.remove();
+}
+
+function openNote(bi, ci) {
+  const b = books[bi], ch = b.chapters[ci];
+  showModal(`
+    <div class="modal-header">
+      <div class="modal-chapter-label">Chapter ${ci+1} &middot; ${esc(b.title)}</div>
+      <div class="modal-title">${esc(ch.title)}</div>
+    </div>
+    <div class="modal-body">
+      <div class="audio-section">
+        <label class="field-label">Record your thoughts</label>
+        <div class="audio-controls">
+          <button class="btn-record" id="recBtn" onclick="toggleRecording()">
+            <span style="font-size:15px">&#127897;</span> Record
+          </button>
+          <span class="rec-timer" id="recTimer">0:00</span>
+        </div>
+        <div id="transcriptArea">${buildSavedAudioHTML(bi, ci)}</div>
+      </div>
+      <label class="field-label">Transcript</label>
+      <textarea id="noteTa" placeholder="What happened in this chapter? What surprised you? What do you want to remember...">${esc(ch.notes||'')}</textarea>
+      <label class="field-label" style="margin-top:16px;">Additional Notes</label>
+      <textarea id="extraTa" placeholder="Any extra thoughts, quotes, page numbers, follow-up questions...">${esc(ch.extra||'')}</textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveClose(${bi},${ci})">Save &amp; close</button>
+    </div>
+  `);
+  initRecorder(bi, ci);
+  if (ch.audioData) attachSavedAudio(bi, ci);
+}
+
+function saveClose(bi, ci) {
+  const ta = document.getElementById('noteTa');
+  const ex = document.getElementById('extraTa');
+  if (ta) {
+    const typed = ta.value.trim();
+    const transcript = (_recState && _recState.finalText || '').trim();
+    books[bi].chapters[ci].notes = typed || transcript || ta.value;
+  }
+  if (ex) books[bi].chapters[ci].extra = ex.value;
+  save(); render(); closeModal();
+}
+
+// ── Audio recorder ──
+let _recState = { isRecording: false, recognition: null, mediaRecorder: null, audioChunks: [], timerInterval: null, seconds: 0, finalText: '', interimText: '', bi: null, ci: null, stream: null, _savedBlobUrl: null, _newBlobUrl: null };
+
+function initRecorder(bi, ci) {
+  // Revoke any old blob URLs
+  if (_recState._savedBlobUrl) { URL.revokeObjectURL(_recState._savedBlobUrl); }
+  if (_recState._newBlobUrl) { URL.revokeObjectURL(_recState._newBlobUrl); }
+  _recState = { isRecording: false, recognition: null, mediaRecorder: null, audioChunks: [], timerInterval: null, seconds: 0, finalText: '', interimText: '', bi, ci, stream: null, _savedBlobUrl: null, _newBlobUrl: null };
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    const area = document.getElementById('transcriptArea');
+    const existing = area ? area.innerHTML : '';
+    if (area) area.innerHTML = existing + `<p class="no-speech-note">&#9888; Your browser doesn't support speech recognition. Try Chrome or Edge for auto-transcription.</p>`;
+  }
+}
+
+function toggleRecording() {
+  if (_recState.isRecording) stopRecording(); else startRecording();
+}
+
+function startRecording() {
+  const btn = document.getElementById('recBtn');
+  const timerEl = document.getElementById('recTimer');
+  const area = document.getElementById('transcriptArea');
+  if (!btn || !timerEl || !area) return;
+
+  _recState.isRecording = true;
+  _recState.seconds = 0;
+  _recState.finalText = '';
+  _recState.interimText = '';
+  _recState.audioChunks = [];
+
+  btn.className = 'btn-record recording';
+  btn.innerHTML = '<span class="rec-dot"></span> Stop';
+  timerEl.className = 'rec-timer active';
+
+  area.innerHTML = `
+    <div class="transcript-box live" id="transcriptBox">
+      <div class="transcript-label">&#127897; Live transcript</div>
+      <div id="transcriptText" class="transcript-text">Listening...</div>
+    </div>`;
+
+  _recState.timerInterval = setInterval(() => {
+    _recState.seconds++;
+    const m = Math.floor(_recState.seconds / 60);
+    const s = String(_recState.seconds % 60).padStart(2, '0');
+    if (timerEl) timerEl.textContent = `${m}:${s}`;
+  }, 1000);
+
+  // Explicitly request microphone input only — prevents desktop audio capture
+  const micConstraints = {
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      sampleRate: 44100,
+      // Force microphone, not system/desktop audio
+      mediaSource: 'microphone'
+    },
+    video: false
+  };
+  navigator.mediaDevices.getUserMedia(micConstraints).then(stream => {
+    _recState.stream = stream;
+    // Pick best supported MIME type
+    const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+    const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    _recState.mediaRecorder = mr;
+    _recState._recordedMime = mr.mimeType;
+    mr.ondataavailable = e => { if (e.data && e.data.size > 0) _recState.audioChunks.push(e.data); };
+    mr.start(250); // collect chunks every 250ms for reliability
+  }).catch(err => {
+    const el = document.getElementById('transcriptText');
+    const area = document.getElementById('transcriptArea');
+    const msg = err.name === 'NotAllowedError'
+      ? 'Microphone permission denied. Please allow microphone access and try again.'
+      : `Could not access microphone: ${err.message}`;
+    if (el) el.innerHTML = `<span style="color:var(--warn)">${msg}</span>`;
+    else if (area) area.innerHTML = `<p class="no-speech-note" style="color:var(--warn);">${msg}</p>`;
+  });
+
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRec) {
+    const rec = new SpeechRec();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
+    _recState.recognition = rec;
+
+    rec.onresult = (e) => {
+      let interim = '';
+      let final = _recState.finalText;
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) { final += (final ? ' ' : '') + t.trim(); }
+        else { interim += t; }
+      }
+      _recState.finalText = final;
+      _recState.interimText = interim;
+      const el = document.getElementById('transcriptText');
+      if (el) {
+        el.innerHTML = (final ? `<span class="transcript-text">${esc(final)}</span>` : '') +
+                       (interim ? `<span class="transcript-text interim"> ${esc(interim)}</span>` : '') ||
+                       'Listening...';
+      }
+    };
+    rec.onerror = (e) => {
+      const el = document.getElementById('transcriptText');
+      if (el && e.error !== 'aborted') el.innerHTML = `<span style="color:var(--warn)">Mic error: ${e.error}</span>`;
+    };
+    rec.start();
+  } else {
+    const el = document.getElementById('transcriptText');
+    if (el) el.textContent = 'Recording... (transcription not available in this browser)';
+  }
+}
+
+function stopRecording() {
+  _recState.isRecording = false;
+  clearInterval(_recState.timerInterval);
+  if (_recState.recognition) { try { _recState.recognition.stop(); } catch(e) {} _recState.recognition = null; }
+
+  const btn = document.getElementById('recBtn');
+  const timerEl = document.getElementById('recTimer');
+  // Hide the record controls — recording is done
+  if (btn) btn.style.display = 'none';
+  if (timerEl) timerEl.style.display = 'none';
+
+  const transcript = _recState.finalText.trim();
+  const area = document.getElementById('transcriptArea');
+
+  if (_recState.mediaRecorder && _recState.mediaRecorder.state !== 'inactive') {
+    _recState.mediaRecorder.onstop = () => {
+      const mime = _recState._recordedMime || _recState.mediaRecorder.mimeType || 'audio/webm';
+      const blob = new Blob(_recState.audioChunks, { type: mime });
+
+      // Create a blob URL for immediate playback (works reliably in all browsers)
+      const blobUrl = URL.createObjectURL(blob);
+      _recState._newBlobUrl = blobUrl;
+
+      // Also convert to data URL for persistent storage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result;
+        const { bi, ci } = _recState;
+        if (bi !== null && ci !== null && books[bi] && books[bi].chapters[ci]) {
+          books[bi].chapters[ci].audioData = dataUrl;
+          save(); render();
+        }
+        const audioArea = document.getElementById('transcriptArea');
+        if (audioArea) {
+          const playerHTML = `<div class="saved-audio-box" id="savedAudioBox" style="margin-bottom:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div class="transcript-label" style="margin-bottom:0;">&#10003; Recording saved</div>
+              <button class="btn-delete-audio" onclick="deleteAudio(${_recState.bi},${_recState.ci})" title="Delete recording">🗑 Delete</button>
+            </div>
+            <audio id="newAudioPlayer" controls style="width:100%;height:36px;border-radius:6px;"></audio>
+          </div>`;
+          if (transcript) {
+            audioArea.innerHTML = playerHTML + `
+              <div class="transcript-box" id="transcriptBox">
+                <div class="transcript-label">&#10003; Transcript</div>
+                <div class="transcript-text">${esc(transcript)}</div>
+              </div>
+              <button class="btn-use-transcript" onclick="useTranscript()">&#8595; Use as notes</button>`;
+          } else {
+            audioArea.innerHTML = playerHTML + `<p class="no-speech-note">No transcript captured. You can type your notes below.</p>`;
+          }
+          // Attach blob URL to the player after it's in the DOM
+          const player = document.getElementById('newAudioPlayer');
+          if (player) player.src = blobUrl;
+        }
+      };
+      reader.readAsDataURL(blob);
+      if (_recState.stream) { _recState.stream.getTracks().forEach(t => t.stop()); }
+    };
+    _recState.mediaRecorder.stop();
+  } else {
+    // MediaRecorder didn't start (e.g. mic permission denied) — still show transcript if any
+    if (area && transcript) {
+      area.innerHTML = `
+        <div class="transcript-box" id="transcriptBox">
+          <div class="transcript-label">&#10003; Transcript</div>
+          <div class="transcript-text">${esc(transcript)}</div>
+        </div>
+        <button class="btn-use-transcript" onclick="useTranscript()">&#8595; Use as notes</button>`;
+    } else if (area) {
+      area.innerHTML = `<p class="no-speech-note">No recording captured. Check microphone permissions.</p>`;
+    }
+  }
+}
+
+function useTranscript() {
+  const ta = document.getElementById('noteTa');
+  if (!ta || !_recState.finalText) return;
+  const existing = ta.value.trim();
+  ta.value = existing ? existing + '\n\n' + _recState.finalText.trim() : _recState.finalText.trim();
+  ta.focus();
+  ta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Modal helpers ──
+function showModal(html) {
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">${html}</div>
+    </div>`;
+}
+function closeModal() {
+  if (_recState && _recState.isRecording) {
+    _recState.isRecording = false;
+    clearInterval(_recState.timerInterval);
+    if (_recState.recognition) { try { _recState.recognition.stop(); } catch(e) {} }
+    if (_recState.mediaRecorder && _recState.mediaRecorder.state !== 'inactive') { try { _recState.mediaRecorder.stop(); } catch(e) {} }
+    if (_recState.stream) { _recState.stream.getTracks().forEach(t => t.stop()); }
+  }
+  // Clean up blob URLs to free memory
+  if (_recState._savedBlobUrl) { URL.revokeObjectURL(_recState._savedBlobUrl); _recState._savedBlobUrl = null; }
+  if (_recState._newBlobUrl) { URL.revokeObjectURL(_recState._newBlobUrl); _recState._newBlobUrl = null; }
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── Theme toggle ──
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('iconMoon').style.display = isDark ? 'none' : '';
+  document.getElementById('iconSun').style.display = isDark ? '' : 'none';
+  try { localStorage.setItem('bj_theme', isDark ? 'dark' : 'light'); } catch(e) {}
+}
+try {
+  if (localStorage.getItem('bj_theme') === 'dark') {
+    document.body.classList.add('dark');
+    document.getElementById('iconMoon').style.display = 'none';
+    document.getElementById('iconSun').style.display = '';
+  }
+} catch(e) {}
+
+render();
+</script>
+</body>
+</html>
